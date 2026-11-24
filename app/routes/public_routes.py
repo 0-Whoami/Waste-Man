@@ -84,6 +84,7 @@ def get_public_stats():
 
     # Global counters
     total = conn.execute("SELECT COUNT(*) FROM complaints").fetchone()[0]
+    pending = conn.execute("SELECT COUNT(*) FROM complaints WHERE status = 'Submitted'").fetchone()[0]
     in_progress = conn.execute("SELECT COUNT(*) FROM complaints WHERE status = 'In Progress'").fetchone()[0]
     resolved = conn.execute("SELECT COUNT(*) FROM complaints WHERE status = 'Resolved'").fetchone()[0]
 
@@ -100,7 +101,7 @@ def get_public_stats():
     conn.close()
 
     return {
-        "counters": {"total": total, "in_progress": in_progress, "resolved": resolved},
+        "counters": {"total": total, "pending": pending, "in_progress": in_progress, "resolved": resolved},
         "areas": [
             {
                 "area_name": row["area_name"],
@@ -122,15 +123,18 @@ def get_awareness_info():
             "E-Waste (Yellow/Special)": "Electronic items like old phones, chargers, cables, circuit boards."
         },
         "items": {
-            "banana peel": "Wet Waste (Green)",
-            "pizza box": "Dry Waste (Blue)",
-            "milk carton": "Dry Waste (Blue)",
-            "battery": "Hazardous Waste (Red)",
-            "broken mirror": "Hazardous Waste (Red)",
-            "charger": "E-Waste (Yellow/Special)",
-            "old smartphone": "E-Waste (Yellow/Special)",
-            "plastic bag": "Dry Waste (Blue)",
-            "coffee grounds": "Wet Waste (Green)",
-            "paint can": "Hazardous Waste (Red)"
+            "banana peel": {"bin": "Wet Waste (Green)", "tip": "Ideal for composting."},
+            "pizza box": {"bin": "Dry Waste (Blue)", "tip": "Clean cardboard only; tear off greasy sections for Wet Waste."},
+            "milk carton": {"bin": "Dry Waste (Blue)", "tip": "Rinse out completely and flatten before discarding."},
+            "battery": {"bin": "Hazardous Waste (Red)", "tip": "Do not puncture or expose to heat; tape terminals if possible."},
+            "broken mirror": {"bin": "Hazardous Waste (Red)", "tip": "Wrap securely in newspaper to prevent injury to sanitation workers."},
+            "charger": {"bin": "E-Waste (Yellow/Special)", "tip": "Coil wires to prevent tangling with other e-waste."},
+            "old smartphone": {"bin": "E-Waste (Yellow/Special)", "tip": "Wipe personal data and remove SIM/SD cards before disposal."},
+            "plastic bottle": {"bin": "Dry Waste (Blue)", "tip": "Empty contents, crush to save space, and keep cap on."},
+            "medicine": {"bin": "Hazardous Waste (Red)", "tip": "Keep in original packaging; do not flush down the toilet."},
+            "food scraps": {"bin": "Wet Waste (Green)", "tip": "Drain excess liquids; wrap in newspaper if necessary."},
+            "plastic bag": {"bin": "Dry Waste (Blue)", "tip": "Ensure it is empty and clean; bundle multiple bags together."},
+            "coffee grounds": {"bin": "Wet Waste (Green)", "tip": "Excellent for soil; can be mixed directly into compost."},
+            "paint can": {"bin": "Hazardous Waste (Red)", "tip": "Dry out leftover paint completely before discarding."}
         }
     }

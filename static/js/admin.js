@@ -39,6 +39,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     document.getElementById('filter-search').addEventListener('input', debounce(loadTable, 500));
 
+    // Export CSV
+    const exportBtn = document.getElementById('btn-export-csv');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', exportCSV);
+    }
+
     // Modal close
     document.getElementById('close-modal').addEventListener('click', () => {
         document.getElementById('update-modal').classList.add('hidden');
@@ -109,6 +115,8 @@ async function loadAnalytics() {
     } catch(e) {}
 }
 
+let currentRecords = [];
+
 async function loadTable() {
     const status = document.getElementById('filter-status').value;
     const area_id = document.getElementById('filter-area').value;
@@ -125,6 +133,7 @@ async function loadTable() {
 
     try {
         const records = await API.get(`/api/admin/complaints?${q.toString()}`);
+        currentRecords = records;
         const tbody = document.getElementById('table-body');
         tbody.innerHTML = '';
 
@@ -135,9 +144,20 @@ async function loadTable() {
 
         records.forEach(r => {
             const d = new Date(r.created_at).toLocaleDateString();
-            const badgeClass = `badge badge-${r.status.toLowerCase().replace(' ', '')}`;
-            const prioClass = r.is_hotspot_escalated ? 'badge-hotspot' : `badge-${r.priority.toLowerCase()}`;
-            const prioText = r.is_hotspot_escalated ? '🔥 HOTSPOT' : r.priority;
+            const badgeClass = `badge status-${r.status.toLowerCase().replace(/\s+/g, '-')}`;
+
+            let prioClass = `badge priority-${r.priority.toLowerCase()}`;
+            let prioText = r.priority;
+
+            if (r.is_hotspot_escalated) {
+                if (r.status === 'Resolved') {
+                    prioClass = 'badge badge-muted';
+                    prioText = 'WAS HOTSPOT';
+                } else {
+                    prioClass = 'badge badge-hotspot';
+                    prioText = '🔥 HOTSPOT';
+                }
+            }
 
             const tr = document.createElement('tr');
             tr.className = "border-b border-slate-700/50 hover:bg-slate-800/50 transition-colors";
@@ -145,7 +165,7 @@ async function loadTable() {
                 <td class="p-3 font-mono text-sm text-emerald-400">${r.tracking_code}</td>
                 <td class="p-3 text-sm">${r.area_name}</td>
                 <td class="p-3 text-sm">${r.category}</td>
-                <td class="p-3"><span class="badge ${prioClass}">${prioText}</span></td>
+                <td class="p-3"><span class="${prioClass}">${prioText}</span></td>
                 <td class="p-3"><span class="${badgeClass}">${r.status}</span></td>
                 <td class="p-3 text-sm text-slate-300">${r.assigned_team || 'Unassigned'}</td>
                 <td class="p-3 text-sm text-slate-400">${d}</td>
@@ -218,18 +238,38 @@ function updateMap(areaStats) {
         if(layer instanceof L.CircleMarker) map.removeLayer(layer);
     });
 
+    let markers = [];
     areaStats.forEach(a => {
         const color = a.open_reports >= 3 ? '#ef4444' : (a.open_reports > 0 ? '#f59e0b' : '#10b981');
         const radius = Math.max(8, a.open_reports * 4);
 
-        L.circleMarker([a.latitude, a.longitude], {
+        const isHotspot = a.open_reports >= 3;
+        const statusText = isHotspot ? '<span class="text-red-500 font-bold">🔥 HOTSPOT</span>' : (a.open_reports > 0 ? 'Active Issues' : 'Clear');
+
+        const popupContent = `
+            <div class="text-sm">
+                <strong class="text-white text-base block mb-1 border-b border-slate-700 pb-1">${a.area_name}</strong>
+                <div class="text-slate-300">Open Reports: <span class="font-bold text-white">${a.open_reports}</span></div>
+                <div class="text-slate-300">Resolved: <span class="font-bold text-white">${a.resolved_reports}</span></div>
+                <div class="mt-2">${statusText}</div>
+            </div>
+        `;
+
+        const marker = L.circleMarker([a.latitude, a.longitude], {
             color: color,
             fillColor: color,
             fillOpacity: 0.6,
             radius: radius
-        }).addTo(map)
-          .bindPopup(`<strong class="text-slate-800">${a.area_name}</strong><br><span class="text-slate-700">Open Reports: ${a.open_reports}</span>`);
+        }).bindPopup(popupContent);
+
+        marker.addTo(map);
+        markers.push(marker);
     });
+
+    if (markers.length > 0) {
+        const group = new L.featureGroup(markers);
+        map.fitBounds(group.getBounds(), { padding: [30, 30], maxZoom: 14 });
+    }
 }
 
 function updateChart(areaStats) {
@@ -247,12 +287,17 @@ function updateChart(areaStats) {
             labels: labels,
             datasets: [
                 {
-                    label: 'Open Reports',
-                    data: openData,
-                    backgroundColor: openData.map(v => v >= 3 ? '#ef4444' : '#f59e0b'),
+                    label: 'Hotspot Open (3+)',
+                    data: openData.map(v => v >= 3 ? v : 0),
+                    backgroundColor: '#ef4444',
                 },
                 {
-                    label: 'Resolved Reports',
+                    label: 'Normal Open',
+                    data: openData.map(v => v > 0 && v < 3 ? v : 0),
+                    backgroundColor: '#f59e0b',
+                },
+                {
+                    label: 'Resolved',
                     data: resolvedData,
                     backgroundColor: '#10b981',
                 }
@@ -278,4 +323,40 @@ function debounce(func, wait) {
         clearTimeout(timeout);
         timeout = setTimeout(() => func.apply(this, args), wait);
     };
+}
+
+function exportCSV() {
+    if (currentRecords.length === 0) {
+        Toast.show("No records to export", "error");
+        return;
+    }
+    const headers = ['Tracking ID', 'Area', 'Category', 'Priority', 'Status', 'Assigned Team', 'Created Date', 'Description'];
+    let csvContent = headers.join(',') + '\n';
+
+    currentRecords.forEach(r => {
+        const d = new Date(r.created_at).toLocaleDateString();
+        const row = [
+            r.tracking_code,
+            r.area_name,
+            r.category,
+            r.priority,
+            r.status,
+            r.assigned_team || 'Unassigned',
+            d,
+            r.description || ''
+        ].map(field => {
+            const escaped = String(field).replace(/"/g, '""');
+            return `"${escaped}"`;
+        });
+        csvContent += row.join(',') + '\n';
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "cleantrack_reports.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }

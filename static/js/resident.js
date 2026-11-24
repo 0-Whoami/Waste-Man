@@ -101,6 +101,10 @@ async function loadPublicStats() {
     try {
         const stats = await API.get('/api/stats/public');
         document.getElementById('stat-total').textContent = stats.counters.total;
+
+        const pendingEl = document.getElementById('stat-pending');
+        if (pendingEl) pendingEl.textContent = stats.counters.pending;
+
         document.getElementById('stat-active').textContent = stats.counters.in_progress;
         document.getElementById('stat-resolved').textContent = stats.counters.resolved;
     } catch(e) {}
@@ -121,7 +125,7 @@ async function fetchTrackingDetails(code) {
         // Status Badge
         const sb = document.getElementById('detail-status');
         sb.textContent = c.status;
-        sb.className = `badge badge-${c.status.toLowerCase().replace(' ', '')}`;
+        sb.className = `badge status-${c.status.toLowerCase().replace(/\s+/g, '-')}`;
 
         // Stepper Visuals
         const steps = ['Submitted', 'In Progress', 'Resolved'];
@@ -166,9 +170,32 @@ async function fetchTrackingDetails(code) {
     }
 }
 
-function fillSampleTracking(code) {
+function fillSampleTrackingAndTrack(code) {
     document.getElementById('tracking-input').value = code;
     fetchTrackingDetails(code);
+}
+
+function trackSubmittedTicket() {
+    const code = document.getElementById('success-tracking-id').textContent;
+    document.getElementById('tracking-input').value = code;
+    fetchTrackingDetails(code);
+}
+
+function copyTrackingId() {
+    const code = document.getElementById('success-tracking-id').textContent;
+    navigator.clipboard.writeText(code).then(() => {
+        Toast.show('Tracking ID copied!', 'success');
+    }).catch(err => {
+        Toast.show('Failed to copy', 'error');
+    });
+}
+
+function quickSearchAwareness(item) {
+    const input = document.getElementById('awareness-search');
+    if (input) {
+        input.value = item;
+        input.dispatchEvent(new Event('input'));
+    }
 }
 
 // Awareness Search
@@ -196,17 +223,23 @@ async function loadAwarenessSearch() {
             return;
         }
 
-        let html = '<div class="space-y-2 mt-2">';
-        matches.forEach(([item, bin]) => {
-            let color = 'bg-slate-700 text-slate-200';
-            if(bin.includes('Green')) color = 'bg-emerald-900/50 text-emerald-400 border border-emerald-700';
-            if(bin.includes('Blue')) color = 'bg-blue-900/50 text-blue-400 border border-blue-700';
-            if(bin.includes('Red')) color = 'bg-red-900/50 text-red-400 border border-red-700';
-            if(bin.includes('Yellow')) color = 'bg-yellow-900/50 text-yellow-400 border border-yellow-700';
+        let html = '<div class="space-y-3 mt-2">';
+        matches.forEach(([item, details]) => {
+            const bin = typeof details === 'string' ? details : details.bin;
+            const tip = typeof details === 'string' ? '' : details.tip;
 
-            html += `<div class="p-3 rounded flex justify-between items-center ${color}">
-                <span class="capitalize font-medium">${item}</span>
-                <span class="text-sm font-bold">${bin}</span>
+            let color = 'bg-slate-700 text-slate-200 border-slate-600';
+            if(bin.includes('Green')) color = 'bg-emerald-900/20 text-emerald-400 border border-emerald-700/50';
+            if(bin.includes('Blue')) color = 'bg-blue-900/20 text-blue-400 border border-blue-700/50';
+            if(bin.includes('Red')) color = 'bg-red-900/20 text-red-400 border border-red-700/50';
+            if(bin.includes('Yellow')) color = 'bg-yellow-900/20 text-yellow-400 border border-yellow-700/50';
+
+            html += `<div class="p-4 rounded border ${color} flex flex-col justify-center">
+                <div class="flex justify-between items-center w-full mb-1">
+                    <span class="capitalize font-medium text-slate-200">${item}</span>
+                    <span class="text-sm font-bold opacity-90">${bin}</span>
+                </div>
+                ${tip ? `<div class="text-xs opacity-75 mt-1 border-t border-current pt-2 mt-2">${tip}</div>` : ''}
             </div>`;
         });
         html += '</div>';
