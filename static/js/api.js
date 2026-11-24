@@ -10,10 +10,7 @@ const API = {
             if (!response.ok) {
                 const errorMsg = data?.detail || 'An error occurred';
                 if (response.status === 401 || response.status === 403) {
-                    if (window.location.pathname === '/admin') {
-                        window.location.href = '/admin#login';
-                        location.reload();
-                    }
+                    // Do nothing here for admin auth check, handle in admin.js
                 }
                 throw new Error(errorMsg);
             }
