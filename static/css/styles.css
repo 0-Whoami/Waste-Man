@@ -1,0 +1,117 @@
+/* Base variables and Tailwind overrides */
+:root {
+  --primary: #059669;
+  --primary-dark: #047857;
+  --bg-dark: #0f172a;
+  --bg-card: #1e293b;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --border-color: #334155;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --success: #10b981;
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  font-family: 'Inter', system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+.card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+}
+
+/* Status Badges */
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-block;
+}
+
+.badge-submitted { background-color: rgba(148, 163, 184, 0.2); color: #cbd5e1; border: 1px solid #475569; }
+.badge-progress { background-color: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #b45309; }
+.badge-resolved { background-color: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #047857; }
+.badge-hotspot { background-color: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #b91c1c; animation: pulse 2s infinite; }
+
+/* Custom Inputs */
+input, select, textarea {
+  background-color: #0f172a;
+  border: 1px solid var(--border-color);
+  color: white;
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  width: 100%;
+  transition: all 0.2s;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.3);
+}
+
+/* Custom Buttons */
+.btn-primary {
+  background-color: var(--primary);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  cursor: pointer;
+  border: none;
+}
+.btn-primary:hover { background-color: var(--primary-dark); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Animations */
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+/* Toast Notifications */
+#toast-container {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.toast {
+  background-color: var(--bg-card);
+  border-left: 4px solid var(--primary);
+  color: white;
+  padding: 1rem;
+  border-radius: 0.375rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  transform: translateX(100%);
+  opacity: 0;
+  animation: slideIn 0.3s forwards, fadeOut 0.3s forwards 4s;
+}
+.toast.error { border-left-color: var(--danger); }
+
+@keyframes slideIn { to { transform: translateX(0); opacity: 1; } }
+@keyframes fadeOut { to { transform: translateY(-10px); opacity: 0; } }
+
+/* Leaflet dark theme tweaks */
+.leaflet-container { background-color: #0f172a !important; font-family: 'Inter', sans-serif;}
+.leaflet-popup-content-wrapper { background-color: var(--bg-card) !important; color: white !important; }
+.leaflet-popup-tip { background-color: var(--bg-card) !important; }
+
+/* Hidden utility */
+.hidden { display: none !important; }

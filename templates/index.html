@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CleanTrack - Resident Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body class="bg-[#0f172a] text-slate-200 antialiased selection:bg-emerald-500/30">
+
+    <!-- Navbar -->
+    <nav class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <svg class="w-8 h-8 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span class="text-xl font-bold text-white tracking-tight">CleanTrack</span>
+            </div>
+            <a href="/admin" class="text-sm font-medium text-slate-400 hover:text-white transition-colors">Admin Login &rarr;</a>
+        </div>
+    </nav>
+
+    <!-- Hero Stats -->
+    <header class="max-w-6xl mx-auto px-4 py-12 text-center">
+        <h1 class="text-4xl md:text-5xl font-extrabold text-white mb-4">Keep our city clean, <span class="text-emerald-500">together.</span></h1>
+        <p class="text-slate-400 max-w-2xl mx-auto mb-10">Report waste hotspots, track cleanup progress in real-time, and learn how to segregate waste effectively.</p>
+
+        <div class="grid grid-cols-3 gap-4 max-w-3xl mx-auto">
+            <div class="card p-4 text-center">
+                <div class="text-3xl font-bold text-white" id="stat-total">-</div>
+                <div class="text-xs text-slate-400 uppercase font-semibold mt-1">Total Reports</div>
+            </div>
+            <div class="card p-4 text-center border-amber-900/30 bg-amber-900/10">
+                <div class="text-3xl font-bold text-amber-500" id="stat-active">-</div>
+                <div class="text-xs text-amber-500/70 uppercase font-semibold mt-1">In Progress</div>
+            </div>
+            <div class="card p-4 text-center border-emerald-900/30 bg-emerald-900/10">
+                <div class="text-3xl font-bold text-emerald-500" id="stat-resolved">-</div>
+                <div class="text-xs text-emerald-500/70 uppercase font-semibold mt-1">Resolved</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Tabs -->
+    <main class="max-w-4xl mx-auto px-4 pb-20">
+
+        <!-- Tab Nav -->
+        <div class="flex border-b border-slate-800 mb-8">
+            <button class="tab-btn flex-1 py-4 text-sm font-medium border-b-2 border-emerald-500 text-emerald-500 transition-colors" data-target="tab-report">Report Issue</button>
+            <button class="tab-btn flex-1 py-4 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-colors" data-target="tab-track">Track Status</button>
+            <button class="tab-btn flex-1 py-4 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-colors" data-target="tab-awareness">Awareness Hub</button>
+        </div>
+
+        <!-- 1. Report Form -->
+        <div id="tab-report" class="tab-content block">
+            <div id="report-form-container" class="card">
+                <h2 class="text-xl font-bold text-white mb-6">Report Waste / Hotspot</h2>
+                <form id="report-form" class="space-y-5">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-1">Your Name *</label>
+                            <input type="text" name="reporter_name" required placeholder="John Doe">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-1">Contact (Email/Phone) <span class="text-slate-500 text-xs">Optional</span></label>
+                            <input type="text" name="reporter_contact" placeholder="For updates">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-1">Area / Ward *</label>
+                            <select name="area_id" id="area_id" required>
+                                <option value="">Select an area...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-1">Waste Category *</label>
+                            <select name="category" required>
+                                <option value="">Select category...</option>
+                                <option value="Overflowing Bins">Overflowing Bins</option>
+                                <option value="Littering">Littering</option>
+                                <option value="Plastic Waste">Plastic Waste</option>
+                                <option value="Organic Waste">Organic Waste</option>
+                                <option value="E-Waste">E-Waste</option>
+                                <option value="Hazardous Waste">Hazardous Waste (Medical, Chemical)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Description *</label>
+                        <textarea name="description" rows="3" required placeholder="Describe the issue and exact location..."></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Attach Photo <span class="text-slate-500 text-xs">(Max 3MB)</span></label>
+                        <input type="file" name="image" id="image" accept=".jpg,.jpeg,.png,.webp" class="file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-emerald-900 file:text-emerald-400 hover:file:bg-emerald-800">
+                        <img id="image-preview" class="hidden mt-3 h-32 rounded border border-slate-700 object-cover" alt="Preview">
+                    </div>
+
+                    <button type="submit" class="btn-primary w-full py-3 text-lg mt-4">Submit Report</button>
+                </form>
+            </div>
+
+            <!-- Success State -->
+            <div id="report-success" class="card text-center hidden py-12">
+                <div class="w-16 h-16 bg-emerald-900/50 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-500">
+                    <svg class="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                <h3 class="text-2xl font-bold text-white mb-2">Report Submitted!</h3>
+                <p class="text-slate-400 mb-6">Your tracking ID is:</p>
+                <div class="inline-block bg-slate-900 border border-slate-700 rounded-lg px-6 py-3 text-3xl font-mono text-emerald-400 font-bold tracking-wider mb-6" id="success-tracking-id">WM-XXXX</div>
+
+                <div id="success-hotspot-msg" class="hidden bg-red-900/20 border border-red-900 text-red-400 p-3 rounded mb-6 max-w-md mx-auto text-sm">
+                    🔥 This area has multiple open reports and has been automatically escalated to Priority: HIGH.
+                </div>
+
+                <div>
+                    <button onclick="location.reload()" class="text-sm text-slate-400 hover:text-white underline">Submit another report</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Track Status -->
+        <div id="tab-track" class="tab-content hidden">
+            <div class="card mb-6">
+                <form id="track-form" class="flex gap-3">
+                    <input type="text" id="tracking-input" placeholder="Enter Tracking ID (e.g., WM-1001)" class="flex-1 font-mono uppercase" required>
+                    <button type="submit" class="btn-primary whitespace-nowrap">Track</button>
+                </form>
+                <div class="mt-4 text-xs text-slate-400 flex items-center gap-2 flex-wrap">
+                    <span>Try a demo ID:</span>
+                    <button onclick="fillSampleTracking('WM-1001')" class="bg-slate-800 px-2 py-1 rounded hover:bg-slate-700">WM-1001</button>
+                    <button onclick="fillSampleTracking('WM-1005')" class="bg-slate-800 px-2 py-1 rounded hover:bg-slate-700">WM-1005</button>
+                    <button onclick="fillSampleTracking('WM-1007')" class="bg-slate-800 px-2 py-1 rounded hover:bg-slate-700">WM-1007</button>
+                </div>
+            </div>
+
+            <div id="track-result" class="card hidden">
+                <div class="flex justify-between items-start mb-6 border-b border-slate-800 pb-4">
+                    <div>
+                        <div class="text-xs text-slate-400 uppercase font-bold mb-1">Tracking ID</div>
+                        <div class="text-2xl font-mono font-bold text-white" id="detail-id">WM-XXXX</div>
+                    </div>
+                    <div id="detail-status" class="badge">Status</div>
+                </div>
+
+                <!-- Stepper -->
+                <div class="flex items-center justify-between mb-10 relative">
+                    <div class="absolute left-0 top-1/2 w-full h-1 bg-slate-800 -z-10 -translate-y-1/2 rounded"></div>
+                    <div class="text-center">
+                        <div id="step-1" class="w-8 h-8 mx-auto rounded-full bg-slate-700 border-4 border-[#1e293b] flex items-center justify-center mb-2"></div>
+                        <div class="text-xs font-semibold">Submitted</div>
+                    </div>
+                    <div class="text-center">
+                        <div id="step-2" class="w-8 h-8 mx-auto rounded-full bg-slate-700 border-4 border-[#1e293b] flex items-center justify-center mb-2"></div>
+                        <div class="text-xs font-semibold">In Progress</div>
+                    </div>
+                    <div class="text-center">
+                        <div id="step-3" class="w-8 h-8 mx-auto rounded-full bg-slate-700 border-4 border-[#1e293b] flex items-center justify-center mb-2"></div>
+                        <div class="text-xs font-semibold">Resolved</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="text-sm font-semibold text-slate-400 mb-2 uppercase tracking-wider">Details</h4>
+                        <div class="bg-slate-900/50 p-4 rounded text-sm space-y-3">
+                            <p><span class="text-slate-500">Area:</span> <span id="detail-area" class="font-medium text-white"></span></p>
+                            <p><span class="text-slate-500">Category:</span> <span id="detail-category" class="font-medium text-white"></span></p>
+                            <p><span class="text-slate-500">Assigned To:</span> <span id="detail-team" class="font-medium text-emerald-400"></span></p>
+                            <div>
+                                <span class="text-slate-500 block mb-1">Description:</span>
+                                <p id="detail-desc" class="text-slate-300"></p>
+                            </div>
+                        </div>
+                        <img id="detail-image" class="w-full mt-4 rounded border border-slate-700 hidden" alt="Evidence">
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-semibold text-slate-400 mb-2 uppercase tracking-wider">Activity Log</h4>
+                        <div id="detail-timeline" class="bg-slate-900/50 p-4 rounded text-sm min-h-[150px]">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Awareness Hub -->
+        <div id="tab-awareness" class="tab-content hidden">
+            <div class="card mb-6 bg-gradient-to-r from-slate-900 to-slate-800">
+                <h2 class="text-2xl font-bold text-white mb-2">Which Bin Does It Go In?</h2>
+                <p class="text-slate-400 mb-6 text-sm">Search for an item to know how to dispose of it properly.</p>
+
+                <input type="text" id="awareness-search" placeholder="Type an item (e.g. 'battery', 'pizza box')..." class="text-lg py-3">
+                <div id="awareness-result" class="mt-4"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="card border-l-4 border-l-green-500">
+                    <h3 class="font-bold text-white text-lg mb-1">Wet Waste (Green Bin)</h3>
+                    <p class="text-sm text-slate-400">Biodegradable organic matter. Used for composting.</p>
+                    <p class="text-xs text-green-400 mt-2">Examples: Food scraps, fruit peels, tea leaves.</p>
+                </div>
+                <div class="card border-l-4 border-l-blue-500">
+                    <h3 class="font-bold text-white text-lg mb-1">Dry Waste (Blue Bin)</h3>
+                    <p class="text-sm text-slate-400">Recyclable inorganic materials. Must be clean and dry.</p>
+                    <p class="text-xs text-blue-400 mt-2">Examples: Plastic, paper, glass, cardboard.</p>
+                </div>
+                <div class="card border-l-4 border-l-red-500">
+                    <h3 class="font-bold text-white text-lg mb-1">Hazardous Waste (Red Bin)</h3>
+                    <p class="text-sm text-slate-400">Toxic or infectious materials needing special handling.</p>
+                    <p class="text-xs text-red-400 mt-2">Examples: Syringes, chemicals, paint, broken glass.</p>
+                </div>
+                <div class="card border-l-4 border-l-yellow-500">
+                    <h3 class="font-bold text-white text-lg mb-1">E-Waste (Yellow Bin)</h3>
+                    <p class="text-sm text-slate-400">Electronic components containing heavy metals.</p>
+                    <p class="text-xs text-yellow-400 mt-2">Examples: Batteries, chargers, old phones, wires.</p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer Disclosure -->
+    <footer class="border-t border-slate-800 mt-12 py-8 text-center text-xs text-slate-500 bg-slate-900">
+        <div class="max-w-4xl mx-auto px-4">
+            <p class="mb-2"><strong>Hackathon Prototype Disclosure:</strong> This is a demonstration environment. Data shown (areas, complaints, teams) is pre-seeded mock data.</p>
+            <p>Built with FastAPI, SQLite, TailwindCSS, Chart.js, and Leaflet. No paid external APIs are used.</p>
+        </div>
+    </footer>
+
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/resident.js"></script>
+</body>
+</html>
