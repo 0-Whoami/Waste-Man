@@ -1,44 +1,129 @@
 package com.example.wasteman
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.onClick
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.compose.material.icons.filled.AdminPanelSettings
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Eco
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Report
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
+import androidx.compose.ui.unit.times
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.reload.DevelopmentEntryPoint
+import org.w3c.dom.Text
+import kotlin.math.round
 
-val EcoGreen = Color(0xFF2E7D32)
-val EcoLightGreen = Color(0xFFE8F5E9)
-val EcoDarkGreen = Color(0xFF1B5E20)
+val EcoGreen = Color(0xFF4fb828)
+val EcoLightGreen = Color(0xFFf1e4f3)
+val EcoDarkGreen = Color(0xFF386c0b)
+
+val Black = Color(0xFF191102)
 val AlertRed = Color(0xFFC62828)
-val AlertBg = Color(0xFFFFEBEE)
-val WarningAmber = Color(0xFFF57C00)
-val InfoBlue = Color(0xFF1976D2)
 
 @Composable
 @Preview
@@ -54,1208 +139,1458 @@ fun App() {
         )
     ) {
         Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = Color(0xFFF4F6F8)
+            modifier = Modifier.fillMaxSize()
         ) {
-            HomeScreen(repository)
+            Screen2()
+            //HomeScreen(repository)
         }
     }
 }
 
-@Composable
-fun HomeScreen(repository: WasteManRepository) {
-    var activeTab by remember { mutableStateOf("HOME") }
-    var showLoginDialog by remember { mutableStateOf(false) }
-    var maximizedComplaint by remember { mutableStateOf<Complaint?>(null) }
-
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        val isCompact = maxWidth < 600.dp
-
-        Column(modifier = Modifier.fillMaxSize().safeContentPadding()) {
-            // Adaptive Top Header Bar
-            AdaptiveHeaderBar(repository, isCompact) {
-                showLoginDialog = true
-            }
-
-            // Navigation Ribbon
-            LazyRow(
-                modifier = Modifier.fillMaxWidth().background(Color.White).padding(horizontal = 12.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                item { NavChip("🏠 Home & Feed", activeTab == "HOME") { activeTab = "HOME" } }
-                item { NavChip("📝 Report Issue", activeTab == "REPORT") { activeTab = "REPORT" } }
-                item { NavChip("🔍 Track Reports", activeTab == "TRACK") { activeTab = "TRACK" } }
-                item {
-                    NavChip("🛡️ Admin Portal", activeTab == "ADMIN") {
-                        if (repository.currentUserRole == UserRole.ADMINISTRATOR) {
-                            activeTab = "ADMIN"
-                        } else {
-                            showLoginDialog = true
-                        }
-                    }
-                }
-            }
-
-            HorizontalDivider(color = Color.LightGray.copy(alpha = 0.4f))
-
-            // Main Content Area
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(if (isCompact) 10.dp else 20.dp)
-            ) {
-                when (activeTab) {
-                    "HOME" -> HomeFeedWithAnalytics(
-                        repository = repository,
-                        isCompact = isCompact,
-                        onReportClick = { activeTab = "REPORT" },
-                        onTrackClick = { activeTab = "TRACK" },
-                        onComplaintClick = { complaint -> maximizedComplaint = complaint }
-                    )
-                    "REPORT" -> ReportIssueScreen(repository, isCompact) { activeTab = "TRACK" }
-                    "TRACK" -> TrackComplaintsScreen(repository) { complaint -> maximizedComplaint = complaint }
-                    "ADMIN" -> AdminDashboardContent(repository, isCompact) { complaint -> maximizedComplaint = complaint }
-                }
-            }
-        }
-    }
-
-    if (showLoginDialog) {
-        LoginDialog(repository) {
-            showLoginDialog = false
-            if (repository.currentUserRole == UserRole.ADMINISTRATOR) {
-                activeTab = "ADMIN"
-            }
-        }
-    }
-
-    // Maximized Issue & Photo Modal Dialog with Google Maps Integration
-    if (maximizedComplaint != null) {
-        MaximizedIssueDialog(complaint = maximizedComplaint!!) {
-            maximizedComplaint = null
-        }
-    }
-}
 
 @Composable
-fun AdaptiveHeaderBar(repository: WasteManRepository, isCompact: Boolean, onLoginClick: () -> Unit) {
-    Surface(
-        color = EcoDarkGreen,
-        modifier = Modifier.fillMaxWidth(),
-        shadowElevation = 4.dp
+fun HeaderBar(isCompact: Boolean, state: AppState) {
+    Row(
+        modifier = Modifier.padding(5.dp).defaultMinSize(minHeight = 100.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        if (isCompact) {
-            Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier.size(34.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.2f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Default.Eco, contentDescription = "Logo", tint = Color.White, modifier = Modifier.size(20.dp))
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("WasteMan", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                    }
-
-                    if (repository.currentUserRole != null) {
-                        Button(
-                            onClick = { repository.logout() },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.2f)),
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp)
-                        ) {
-                            Text("Sign Out", color = Color.White, fontSize = 11.sp)
-                        }
-                    } else {
-                        Button(
-                            onClick = onLoginClick,
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
-                        ) {
-                            Text("Sign In", color = EcoDarkGreen, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                        }
-                    }
-                }
-
-                if (repository.currentUserRole != null) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = if (repository.currentUserRole == UserRole.ADMINISTRATOR) "🛡️ Admin (${repository.currentPhone})" else "👤 Resident (${repository.currentPhone})",
-                        color = Color.White.copy(alpha = 0.9f),
-                        fontSize = 11.sp
-                    )
-                }
-            }
-        } else {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier.size(40.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.2f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.Default.Eco, contentDescription = "Logo", tint = Color.White, modifier = Modifier.size(24.dp))
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text("WasteMan System", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                        Text("Smart Community Sanitation & Google Maps Location Tracking", color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp)
-                    }
-                }
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (repository.currentUserRole != null) {
-                        Text(
-                            text = if (repository.currentUserRole == UserRole.ADMINISTRATOR) "🛡️ Admin (${repository.currentPhone})" else "👤 Resident (${repository.currentPhone})",
-                            color = Color.White,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Button(
-                            onClick = { repository.logout() },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.2f)),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
-                        ) {
-                            Text("Sign Out", color = Color.White, fontSize = 12.sp)
-                        }
-                    } else {
-                        Button(
-                            onClick = onLoginClick,
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)
-                        ) {
-                            Icon(Icons.Default.AccountCircle, contentDescription = null, tint = EcoDarkGreen)
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Sign In / Admin Login", color = EcoDarkGreen, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
-            }
-        }
+        Icon(Icons.Default.Eco, "", modifier = Modifier.size(45.dp), tint = EcoLightGreen)
+        Spacer(Modifier.width(10.dp))
+        Text("WasteMan", fontWeight = FontWeight.Bold, fontSize = 35.sp, color = EcoLightGreen)
+        Spacer(Modifier.weight(1f))
+        NavPill(
+            active = true,
+            onClick = {},
+            icon = Icons.Default.Person,
+            label = if (isCompact) "" else (if (state.loginNum.isBlank()) "Login" else "Logout")
+        )
+        Spacer(Modifier.width(10.dp))
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun NavChip(label: String, selected: Boolean, onClick: () -> Unit) {
-    Surface(
-        color = if (selected) EcoGreen else Color(0xFFEEEEEE),
-        shape = RoundedCornerShape(20.dp),
-        modifier = Modifier.clickable { onClick() }
+fun NavPill(active: Boolean, onClick: () -> Unit, icon: ImageVector, label: String) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val hovered by interactionSource.collectIsHoveredAsState()
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.95f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "pressScale"
+    )
+    val eScale by animateFloatAsState(
+        targetValue = if (hovered) 1.5f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "hoverElevation"
+    )
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.scale(scale).shadow(
+            5.dp * eScale,
+            RoundedCornerShape(20.dp),
+            spotColor = EcoLightGreen,
+            ambientColor = EcoLightGreen
+        ).background(EcoLightGreen, RoundedCornerShape(20.dp)).height(40.dp).padding(10.dp)
+            .onClick(interactionSource = interactionSource, onClick = onClick)
     ) {
-        Text(
-            text = label,
-            color = if (selected) Color.White else Color.DarkGray,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-            fontSize = 12.sp,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+        val color = if (active) EcoGreen else Color.Gray
+        Icon(icon, "", tint = color)
+        if (label.isNotBlank()) Text(label, color = color)
+    }
+}
+
+enum class AppTab {
+    HOME, REPORT, ISSUES, ADMIN, LOGIN
+}
+
+class AppState {
+    var activeTab by mutableStateOf(AppTab.HOME)
+    var isAdmin by mutableStateOf(false)
+    var loginNum by mutableStateOf("")
+}
+
+@Composable
+fun NavBar(state: AppState) {
+    val scrollState = rememberScrollState()
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.padding(10.dp).horizontalScroll(scrollState)
+    ) {
+        NavPill(
+            active = state.activeTab == AppTab.HOME,
+            onClick = { state.activeTab = AppTab.HOME },
+            icon = Icons.Default.Home,
+            label = ""
+        )
+        NavPill(
+            active = state.activeTab == AppTab.REPORT,
+            onClick = { state.activeTab = AppTab.REPORT },
+            icon = Icons.Default.Report,
+            label = "Add Report"
+        )
+        NavPill(
+            active = state.activeTab == AppTab.ISSUES,
+            onClick = { state.activeTab = AppTab.ISSUES },
+            icon = Icons.Default.History,
+            label = "My Reports"
+        )
+        if (state.isAdmin) NavPill(
+            active = state.activeTab == AppTab.ADMIN,
+            onClick = { state.activeTab = AppTab.ADMIN },
+            icon = Icons.Default.AdminPanelSettings,
+            label = "My Reports"
         )
     }
 }
 
+class IssueStats(val total: Int = 0, val solved: Int = 0) {
+    val pending: Int
+        get() = total - solved
+}
+
 @Composable
-fun HomeFeedWithAnalytics(
-    repository: WasteManRepository,
-    isCompact: Boolean,
-    onReportClick: () -> Unit,
-    onTrackClick: () -> Unit,
-    onComplaintClick: (Complaint) -> Unit
-) {
-    LazyColumn(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(18.dp)) {
-        // Hero Card
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = EcoLightGreen)
-            ) {
-                Column(modifier = Modifier.padding(if (isCompact) 14.dp else 20.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = "🌿 WasteMan Portal",
-                            style = if (isCompact) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = EcoDarkGreen
-                        )
-                        Spacer(modifier = Modifier.weight(1f))
-                        Badge(containerColor = EcoGreen) { Text("REAL-TIME LIVE", color = Color.White, modifier = Modifier.padding(2.dp), fontSize = 10.sp) }
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Report waste issues with photo & Google Maps pinpoint, track cleanup response, and view area statistics.",
-                        color = Color.DarkGray,
-                        fontSize = if (isCompact) 12.sp else 14.sp
-                    )
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Button(
-                            onClick = onReportClick,
-                            colors = ButtonDefaults.buttonColors(containerColor = EcoGreen),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Icon(Icons.Default.AddLocation, contentDescription = null)
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Report Issue", fontSize = 13.sp)
-                        }
-                        OutlinedButton(
-                            onClick = onTrackClick,
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Icon(Icons.Default.Search, contentDescription = null)
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Track Status", fontSize = 13.sp)
-                        }
-                    }
-                }
-            }
-        }
-
-        // 1. Horizontally Auto-Scrolling News & Safety Feed
-        item {
-            Column {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.RssFeed, contentDescription = null, tint = EcoGreen, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Live News & Hazard Alerts (Auto-Scrolling)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, fontSize = if (isCompact) 14.sp else 16.sp)
-                }
-                Spacer(modifier = Modifier.height(10.dp))
-                AutoScrollingNewsCarousel(repository.newsFeedItems, isCompact)
-            }
-        }
-
-        // 2. City Area Analytics & Summary Dashboard
-        item {
-            Column {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Analytics, contentDescription = null, tint = EcoGreen, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("City Area Analytics & Summary", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, fontSize = if (isCompact) 14.sp else 16.sp)
-                }
-                Spacer(modifier = Modifier.height(10.dp))
-
-                val total = repository.complaints.size
-                val submitted = repository.complaints.count { it.status == ComplaintStatus.SUBMITTED }
-                val inProgress = repository.complaints.count { it.status == ComplaintStatus.IN_PROGRESS }
-                val resolved = repository.complaints.count { it.status == ComplaintStatus.RESOLVED }
-
-                if (isCompact) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            StatCard("Total Reports", total.toString(), Color(0xFF37474F), modifier = Modifier.weight(1f))
-                            StatCard("Submitted/Open", submitted.toString(), WarningAmber, modifier = Modifier.weight(1f))
-                        }
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            StatCard("In Progress", inProgress.toString(), InfoBlue, modifier = Modifier.weight(1f))
-                            StatCard("Resolved", resolved.toString(), EcoGreen, modifier = Modifier.weight(1f))
-                        }
-                    }
-                } else {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        StatCard("Total Reports", total.toString(), Color(0xFF37474F), modifier = Modifier.weight(1f))
-                        StatCard("Submitted/Open", submitted.toString(), WarningAmber, modifier = Modifier.weight(1f))
-                        StatCard("In Progress", inProgress.toString(), InfoBlue, modifier = Modifier.weight(1f))
-                        StatCard("Resolved", resolved.toString(), EcoGreen, modifier = Modifier.weight(1f))
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(14.dp))
-                Text("Sector Resolution Breakdown:", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                Spacer(modifier = Modifier.height(8.dp))
-
-                val areaMap = repository.complaints.groupBy { it.area }
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    areaMap.forEach { (areaName, list) ->
-                        val areaTotal = list.size
-                        val areaResolved = list.count { it.status == ComplaintStatus.RESOLVED }
-                        val areaSubmitted = list.count { it.status == ComplaintStatus.SUBMITTED }
-                        val areaInProgress = list.count { it.status == ComplaintStatus.IN_PROGRESS }
-                        val progress = if (areaTotal > 0) areaResolved.toFloat() / areaTotal.toFloat() else 0f
-
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                        ) {
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text("📍 $areaName", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                    Text("$areaResolved / $areaTotal Resolved (${(progress * 100).toInt()}%)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = EcoGreen)
-                                }
-                                Spacer(modifier = Modifier.height(6.dp))
-                                LinearProgressIndicator(
-                                    progress = { progress },
-                                    modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
-                                    color = EcoGreen,
-                                    trackColor = Color(0xFFE0E0E0)
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    Badge(containerColor = WarningAmber) { Text("$areaSubmitted Open", color = Color.White, fontSize = 10.sp) }
-                                    Badge(containerColor = InfoBlue) { Text("$areaInProgress Active", color = Color.White, fontSize = 10.sp) }
-                                    Badge(containerColor = EcoGreen) { Text("$areaResolved Done", color = Color.White, fontSize = 10.sp) }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // Recent Community Reports Preview
-        item {
-            Text("🔍 Recent Community Reports (Tap to Maximize & View Photo / Google Map)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, fontSize = if (isCompact) 14.sp else 16.sp)
-        }
-
-        items(repository.complaints.take(3)) { complaint ->
-            ComplaintCard(complaint) { onComplaintClick(complaint) }
-        }
+fun foo(color: Color, text: String) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(Modifier.size(20.dp).background(color = color, RoundedCornerShape(5.dp)))
+        Text(text = text, fontSize = 18.sp, color = Black)
     }
 }
 
 @Composable
-fun AutoScrollingNewsCarousel(feedItems: List<NewsFeedItem>, isCompact: Boolean) {
-    val listState = rememberLazyListState()
-
-    LaunchedEffect(feedItems) {
-        if (feedItems.isNotEmpty()) {
-            var index = 0
-            while (isActive) {
-                delay(3500)
-                index = (index + 1) % feedItems.size
-                listState.animateScrollToItem(index)
-            }
-        }
-    }
-
-    LazyRow(
-        state = listState,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        items(feedItems) { item ->
-            NewsCardHorizontal(item, isCompact)
-        }
-    }
-}
-
-@Composable
-fun NewsCardHorizontal(item: NewsFeedItem, isCompact: Boolean) {
-    val bgColor = when (item.type) {
-        NewsType.CRITICAL_ALERT -> AlertBg
-        NewsType.AWARENESS_TIP -> EcoLightGreen
-        NewsType.COMMUNITY_NEWS -> Color(0xFFE3F2FD)
-    }
-
-    val borderColor = when (item.type) {
-        NewsType.CRITICAL_ALERT -> AlertRed
-        NewsType.AWARENESS_TIP -> EcoGreen
-        NewsType.COMMUNITY_NEWS -> InfoBlue
-    }
-
-    Card(
-        modifier = Modifier
-            .width(if (isCompact) 280.dp else 340.dp)
-            .height(if (isCompact) 180.dp else 200.dp)
-            .border(1.5.dp, borderColor.copy(alpha = 0.6f), RoundedCornerShape(14.dp)),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = bgColor)
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(12.dp),
-            verticalArrangement = Arrangement.SpaceBetween
+fun IssueCard(issueStats: IssueStats? = IssueStats(100, 76)) {
+    if (issueStats != null) {
+        val percent =
+            if (issueStats.total == 0) 0f else issueStats.solved.toFloat() / issueStats.total
+        Row(
+            modifier = Modifier.padding(10.dp).widthIn(max = 500.dp).aspectRatio(2.75f)
         ) {
-            Column {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Badge(containerColor = borderColor) {
-                        Text(item.type.name.replace("_", " "), color = Color.White, modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp), fontSize = 9.sp)
-                    }
-                    val itemArea = item.area
-                    if (itemArea != null) {
-                        Text("📍 $itemArea", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = borderColor, fontSize = 10.sp)
-                    }
+            BoxWithConstraints(
+                contentAlignment = Alignment.BottomCenter,
+                modifier = Modifier.weight(1f).aspectRatio(2f)
+            ) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val width = size.width / 10
+                    val offset = Offset(width / 2, width / 2)
+                    drawArc(
+                        Color.LightGray,
+                        -180f,
+                        180f,
+                        false,
+                        style = Stroke(width, cap = StrokeCap.Round),
+                        topLeft = offset,
+                        size = Size(size.width - width, size.width - width)
+                    )
+                    drawArc(
+                        EcoGreen,
+                        -180f,
+                        180 * percent,
+                        false,
+                        style = Stroke(width, cap = StrokeCap.Round),
+                        topLeft = offset,
+                        size = Size(size.width - width, size.width - width)
+                    )
                 }
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(item.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 2, fontSize = 13.sp)
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(item.content, style = MaterialTheme.typography.bodySmall, color = Color.DarkGray, maxLines = 2, fontSize = 11.sp)
+                val fontSize = (maxWidth / 150.dp) * 35.sp
+                Text("${round(percent * 100).toInt()}%", color = Black, fontSize = fontSize)
             }
-
-            val instructions = item.safetyInstructions
-            if (instructions != null) {
-                Card(colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.fillMaxWidth()) {
-                    Text("🛡️ $instructions", fontSize = 10.sp, color = AlertRed, fontWeight = FontWeight.Bold, modifier = Modifier.padding(4.dp), maxLines = 2)
-                }
+            Spacer(Modifier.width(10.dp))
+            Column(
+                modifier = Modifier.fillMaxHeight(),
+                verticalArrangement = Arrangement.SpaceEvenly,
+            ) {
+                foo(Color.LightGray, "Submitted : ${issueStats.total}")
+                foo(EcoGreen, "Solved : ${issueStats.solved}")
             }
         }
     }
+
 }
 
-// 3. Structured Address, Photo Preview & Google Maps Report Screen
 @Composable
-fun ReportIssueScreen(repository: WasteManRepository, isCompact: Boolean, onSubmitted: () -> Unit) {
-    var title by remember { mutableStateOf("") }
-    var selectedCategory by remember { mutableStateOf(IssueCategory.OVERFLOWING_BINS) }
-    var description by remember { mutableStateOf("") }
-    var selectedArea by remember { mutableStateOf("Market Square East") }
-    var streetName by remember { mutableStateOf("14th Commercial Main Road") }
-    var landmarkDetails by remember { mutableStateOf("Opposite Central Bus Stop Gate 3") }
-    var pincode by remember { mutableStateOf("560001") }
-    var latitude by remember { mutableStateOf<Double?>(12.9716) }
-    var longitude by remember { mutableStateOf<Double?>(77.5946) }
-    var uploadedImageData by remember { mutableStateOf<String?>(null) }
-    var showMapPicker by remember { mutableStateOf(false) }
-    var gpsStatusMsg by remember { mutableStateOf("") }
-    var successMsg by remember { mutableStateOf("") }
+fun Card(icon: ImageVector, heading: String, content: String) {
+    Column {
+        Row(
+            modifier = Modifier.padding(5.dp).defaultMinSize(minHeight = 100.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(icon, "", modifier = Modifier.size(45.dp), tint = EcoLightGreen)
+            Spacer(Modifier.width(10.dp))
+            Text(heading, fontWeight = FontWeight.Bold, fontSize = 35.sp, color = EcoLightGreen)
+        }
+        Text(content, color = EcoLightGreen)
+    }
+}
 
-    val areaSectors = listOf(
-        "Market Square East",
-        "North Ward Health Corridor",
-        "Greenwood Residential Park",
-        "Industrial Belt Sector 2",
-        "Downtown Commercial Core"
-    )
+class CardItem(
+    val icon: ImageVector,
+    val heading: String,
+    val content: String
+)
 
-    LazyColumn(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item {
-            Text("Report a Waste Complaint", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = EcoGreen, fontSize = if (isCompact) 18.sp else 22.sp)
-            Text("Fill in structured street address, attach real photo preview, and set Google Maps pin.", style = MaterialTheme.typography.bodyMedium, color = Color.Gray, fontSize = 12.sp)
-            Spacer(modifier = Modifier.height(8.dp))
+@Composable
+fun AutoAdvancingCarousel(
+    items: List<CardItem>,
+    modifier: Modifier = Modifier,
+    autoAdvanceDurationMillis: Int = 5000
+) {
+    if (items.isEmpty()) return
 
-            OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
-                label = { Text("Complaint Title / Short Summary") },
-                placeholder = { Text("e.g. Overflowing garbage bin spilling onto sidewalk") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+    val pagerState = rememberPagerState(pageCount = { items.size })
+    val isDragged by pagerState.interactionSource.collectIsDraggedAsState()
+    val progress = remember { Animatable(0f) }
+    val coroutineScope = rememberCoroutineScope()
+
+    // Handles timer and automatic page advancement
+    LaunchedEffect(pagerState.currentPage, isDragged) {
+        if (isDragged) {
+            progress.snapTo(0f)
+            return@LaunchedEffect
+        }
+
+        progress.snapTo(0f)
+        progress.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(
+                durationMillis = autoAdvanceDurationMillis,
+                easing = LinearEasing
+            )
+        )
+
+        val nextPage = (pagerState.currentPage + 1) % items.size
+        pagerState.animateScrollToPage(nextPage)
+    }
+
+    Column(
+        modifier = modifier.fillMaxWidth().background(EcoGreen, RoundedCornerShape(20.dp)),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        HorizontalPager(
+            state = pagerState,
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            pageSpacing = 12.dp,
+            modifier = Modifier.fillMaxWidth()
+        ) { page ->
+            val item = items[page]
+            Card(
+                icon = item.icon,
+                heading = item.heading,
+                content = item.content
             )
         }
 
-        item {
-            Text("Select Category:", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-            Column {
-                IssueCategory.entries.forEach { cat ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = selectedCategory == cat,
-                            onClick = { selectedCategory = cat }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            items.forEachIndexed { index, _ ->
+                val isSelected = pagerState.currentPage == index
+                val indicatorWidth by animateDpAsState(
+                    targetValue = if (isSelected) 36.dp else 6.dp,
+                    animationSpec = tween(durationMillis = 300),
+                    label = "IndicatorWidth"
+                )
+
+                Box(
+                    modifier = Modifier
+                        .height(6.dp)
+                        .width(indicatorWidth)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.25f))
+                        .clickable {
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(index)
+                            }
+                        }
+                ) {
+                    if (isSelected) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .fillMaxWidth(progress.value)
+                                .clip(CircleShape)
+                                .background(Color.White)
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(cat.displayName, fontWeight = if (cat.isCritical) FontWeight.Bold else FontWeight.Normal, color = if (cat.isCritical) AlertRed else Color.Black, fontSize = 13.sp)
-                        if (cat.isCritical) {
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Badge(containerColor = AlertRed) { Text("HAZARD", color = Color.White, fontSize = 8.sp) }
-                        }
                     }
                 }
             }
         }
+    }
+}
 
-        // REAL Photo Upload & Real Photo Preview Card
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.5f)),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Text("📷 Issue Photo Upload & Live Preview:", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = EcoDarkGreen)
-                    Spacer(modifier = Modifier.height(6.dp))
+class HomeScreenState {
+    var issueStats: IssueStats? by mutableStateOf(null)
+    var newsItems = mutableStateListOf<CardItem>()
+}
 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Button(
-                            onClick = {
-                                pickImageFile { dataUrl ->
-                                    uploadedImageData = dataUrl
-                                }
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF37474F)),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Icon(Icons.Default.PhotoCamera, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Select Photo File", fontSize = 12.sp)
-                        }
+@Composable
+fun HomeScreen(homeScreenState: HomeScreenState) {
+    IssueCard(homeScreenState.issueStats)
+    AutoAdvancingCarousel(homeScreenState.newsItems)
+}
 
-                        if (uploadedImageData != null) {
-                            Spacer(modifier = Modifier.width(10.dp))
-                            TextButton(onClick = { uploadedImageData = null }) {
-                                Text("Remove", color = AlertRed, fontSize = 12.sp)
-                            }
-                        }
-                    }
+enum class WasteCategory(val displayName: String) {
+    OVERFLOWING_BINS("Overflowing Bins"),
+    LITTERING("Littering"),
+    PLASTIC_WASTE("Plastic Waste"),
+    E_WASTE("E-Waste"),
+    ORGANIC_WASTE("Organic Waste"),
+    HAZARDOUS_WASTE("Hazardous Waste"),
+    OTHER("Other")
+}
 
-                    // REAL Photo Preview Box
-                    if (uploadedImageData != null) {
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Card(
-                            modifier = Modifier.fillMaxWidth().height(160.dp),
-                            shape = RoundedCornerShape(10.dp),
-                            colors = CardDefaults.cardColors(containerColor = EcoLightGreen)
-                        ) {
-                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Icon(Icons.Default.Image, contentDescription = "Preview", tint = EcoGreen, modifier = Modifier.size(48.dp))
-                                    Spacer(modifier = Modifier.height(6.dp))
-                                    Text("📷 Real Photo Attached & Ready!", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = EcoDarkGreen)
-                                    Text("Base64 Data URI encoded successfully", fontSize = 10.sp, color = Color.Gray)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+class WasteReportDraft(
+    val category: WasteCategory,
+    val description: String,
+    val location: String,
+    val imageBytes: ByteArray?
+)
 
-        // GOOGLE MAPS & STRUCTURED ADDRESS ENTRY
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.5f)),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Place, contentDescription = null, tint = AlertRed, modifier = Modifier.size(20.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("🗺️ Google Maps Pinpoint & Structured Address:", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = EcoDarkGreen)
-                    }
+class ReportPlatformHandler {
+    fun launchImagePicker(onImagePicked: (bytes: ByteArray, bitmap: ImageBitmap) -> Unit) {
 
-                    // Google Maps Buttons
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(
-                            onClick = {
-                                getCurrentGpsLocation { lat, lng ->
-                                    latitude = lat
-                                    longitude = lng
-                                    streetName = "14th Commercial Main Road"
-                                    landmarkDetails = "Opposite Central Bus Stop Gate 3"
-                                    pincode = "560001"
-                                    selectedArea = "Market Square East"
-                                    gpsStatusMsg = "📍 Google Maps GPS Pin: $lat° N, $lng° E — 14th Main Rd, Market Sq East (±3m)"
-                                }
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = InfoBlue),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Icon(Icons.Default.MyLocation, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Google GPS Pin", fontSize = 11.sp)
-                        }
+    }
 
-                        OutlinedButton(
-                            onClick = { showMapPicker = true },
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Icon(Icons.Default.Map, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Google Maps Picker", fontSize = 11.sp)
-                        }
-                    }
+    fun fetchCurrentLocation(onLocationFetched: (addressOrCoords: String) -> Unit) {
 
-                    // Google Maps Location Preview Box
-                    Card(
-                        modifier = Modifier.fillMaxWidth().height(120.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F0FE)),
-                        shape = RoundedCornerShape(8.dp)
+    }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddReportContent(
+    platformHandler: ReportPlatformHandler = ReportPlatformHandler(),
+    onSubmitReport: (WasteReportDraft) -> Unit = {},
+    modifier: Modifier = Modifier
+) {
+    var selectedCategory by remember { mutableStateOf<WasteCategory?>(null) }
+    var categoryDropdownExpanded by remember { mutableStateOf(false) }
+    var description by remember { mutableStateOf("") }
+    var location by remember { mutableStateOf("") }
+    var imageBytes by remember { mutableStateOf<ByteArray?>(null) }
+    var imagePreview by remember { mutableStateOf<ImageBitmap?>(null) }
+
+    val scrollState = rememberScrollState()
+
+    val fieldColors = OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = EcoGreen,
+        unfocusedBorderColor = Black.copy(alpha = 0.25f),
+        cursorColor = EcoDarkGreen,
+        focusedTextColor = Black,
+        unfocusedTextColor = Black,
+        focusedContainerColor = Color.White.copy(alpha = 0.85f),
+        unfocusedContainerColor = Color.White.copy(alpha = 0.7f)
+    )
+
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        shape = RoundedCornerShape(28.dp),
+        color = EcoLightGreen
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(
+                text = "Add Report",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = Black
+            )
+
+            // 1. Category Dropdown
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                FieldHeader(title = "Waste Category", subtitle = "Select the type of waste issue")
+
+                ExposedDropdownMenuBox(
+                    expanded = categoryDropdownExpanded,
+                    onExpandedChange = { categoryDropdownExpanded = it }
+                ) {
+                    OutlinedTextField(
+                        value = selectedCategory?.displayName ?: "",
+                        onValueChange = {},
+                        readOnly = true,
+                        placeholder = {
+                            Text(
+                                "Choose category (e.g., Overflowing Bins, E-Waste)",
+                                color = Black.copy(alpha = 0.45f)
+                            )
+                        },
+                        trailingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.KeyboardArrowDown,
+                                contentDescription = "Select Category",
+                                tint = EcoDarkGreen
+                            )
+                        },
+                        shape = RoundedCornerShape(16.dp),
+                        colors = fieldColors,
+                        modifier = Modifier
+                            .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                            .fillMaxWidth()
+                    )
+
+                    ExposedDropdownMenu(
+                        expanded = categoryDropdownExpanded,
+                        onDismissRequest = { categoryDropdownExpanded = false },
+                        modifier = Modifier.background(Color.White)
                     ) {
-                        Column(
-                            modifier = Modifier.fillMaxSize().padding(10.dp),
-                            verticalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Map, contentDescription = "Google Maps", tint = InfoBlue, modifier = Modifier.size(20.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("🗺️ GOOGLE MAPS LIVE LOCATION PIN", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = InfoBlue)
-                            }
-                            val lat = latitude ?: 12.9716
-                            val lng = longitude ?: 77.5946
-                            Text("Coordinates: $lat° N, $lng° E\nAddress: $streetName, $landmarkDetails, $selectedArea (PIN: $pincode)", fontSize = 11.sp, color = Color.DarkGray)
-
-                            Button(
-                                onClick = { openInGoogleMaps(lat, lng, "$streetName, $selectedArea, $pincode") },
-                                colors = ButtonDefaults.buttonColors(containerColor = InfoBlue),
-                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
-                            ) {
-                                Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(14.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("Open in Google Maps", fontSize = 11.sp)
-                            }
-                        }
-                    }
-
-                    Text("City Sector / Zone:", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        items(areaSectors) { sec ->
-                            FilterChip(
-                                selected = selectedArea == sec,
-                                onClick = { selectedArea = sec },
-                                label = { Text(sec, fontSize = 11.sp) }
+                        WasteCategory.entries.forEach { category ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = category.displayName,
+                                        color = if (category == selectedCategory) EcoDarkGreen else Black,
+                                        fontWeight = if (category == selectedCategory) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                },
+                                onClick = {
+                                    selectedCategory = category
+                                    categoryDropdownExpanded = false
+                                }
                             )
                         }
                     }
-
-                    OutlinedTextField(
-                        value = streetName,
-                        onValueChange = { streetName = it },
-                        label = { Text("Street / Road Name") },
-                        placeholder = { Text("e.g. 14th Commercial Main Road") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
-
-                    OutlinedTextField(
-                        value = landmarkDetails,
-                        onValueChange = { landmarkDetails = it },
-                        label = { Text("Building / Door / Landmark Details") },
-                        placeholder = { Text("e.g. Opposite Central Bus Stop Gate 3, Flat 2B") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
-
-                    OutlinedTextField(
-                        value = pincode,
-                        onValueChange = { pincode = it.filter { ch -> ch.isDigit() }.take(6) },
-                        label = { Text("Pincode / Zip Code") },
-                        placeholder = { Text("e.g. 560001") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                    )
                 }
             }
-        }
 
-        item {
-            OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
-                label = { Text("Detailed Description of Waste Issue") },
-                placeholder = { Text("Describe volume, foul odor, drainage blockage, or hazard...") },
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 3
-            )
+            // 2. Location Input + Explicit GPS Action
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    FieldHeader(title = "Location", subtitle = "Where is the waste located?")
 
-            if (successMsg.isNotBlank()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(successMsg, color = EcoGreen, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-            Button(
-                onClick = {
-                    if (title.isNotBlank() && description.isNotBlank()) {
-                        val formattedAddr = "$streetName, $landmarkDetails, $selectedArea (PIN: $pincode)"
-                        repository.reportIssue(
-                            title = title,
-                            category = selectedCategory,
-                            description = description,
-                            area = selectedArea,
-                            street = streetName,
-                            landmark = landmarkDetails,
-                            pincode = pincode,
-                            locationDetails = formattedAddr,
-                            latitude = latitude ?: 12.9716,
-                            longitude = longitude ?: 77.5946,
-                            imageUrl = null,
-                            imageData = uploadedImageData
-                        )
-                        successMsg = "Report submitted successfully! Opening status tracker..."
-                        onSubmitted()
-                    } else {
-                        successMsg = "Please fill in complaint title and description."
-                    }
-                },
-                modifier = Modifier.fillMaxWidth().height(48.dp)
-            ) {
-                Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null)
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("Submit Waste Complaint", fontSize = 15.sp)
-            }
-            Spacer(modifier = Modifier.height(30.dp))
-        }
-    }
-
-    // Google Maps Location Picker Dialog
-    if (showMapPicker) {
-        AlertDialog(
-            onDismissRequest = { showMapPicker = false },
-            title = { Text("🗺️ Google Maps Location Picker") },
-            text = {
-                Column {
-                    Text("Select a location on Google Maps to auto-fill address:", fontSize = 11.sp, color = Color.Gray)
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Card(
-                        modifier = Modifier.fillMaxWidth().height(220.dp).background(Color(0xFFE8F0FE)),
-                        shape = RoundedCornerShape(10.dp)
+                    Surface(
+                        shape = RoundedCornerShape(50),
+                        color = EcoGreen.copy(alpha = 0.15f),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(50))
+                            .clickable {
+                                platformHandler.fetchCurrentLocation { fetched ->
+                                    location = fetched
+                                }
+                            }
                     ) {
-                        Column(
-                            modifier = Modifier.fillMaxSize().padding(10.dp),
-                            verticalArrangement = Arrangement.SpaceAround
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            Text("🗺️ GOOGLE MAPS INTERACTIVE PINS", fontWeight = FontWeight.Bold, color = InfoBlue, fontSize = 11.sp)
-
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Button(
-                                    onClick = {
-                                        latitude = 12.9716
-                                        longitude = 77.5946
-                                        selectedArea = "Market Square East"
-                                        streetName = "14th Commercial Main Road"
-                                        landmarkDetails = "Opposite Central Bus Stop Gate 3"
-                                        pincode = "560001"
-                                        gpsStatusMsg = "📍 Selected on Google Maps: Central Market (12.9716, 77.5946)"
-                                        showMapPicker = false
-                                    },
-                                    colors = ButtonDefaults.buttonColors(containerColor = EcoGreen)
-                                ) { Text("📍 Central Market", fontSize = 10.sp) }
-
-                                Button(
-                                    onClick = {
-                                        latitude = 12.9810
-                                        longitude = 77.6005
-                                        selectedArea = "North Ward Health Corridor"
-                                        streetName = "Barton Clinic Road"
-                                        landmarkDetails = "Behind City General Hospital Alley 4"
-                                        pincode = "560012"
-                                        gpsStatusMsg = "📍 Selected on Google Maps: North Ward Clinic (12.9810, 77.6005)"
-                                        showMapPicker = false
-                                    },
-                                    colors = ButtonDefaults.buttonColors(containerColor = AlertRed)
-                                ) { Text("📍 North Hospital", fontSize = 10.sp) }
-                            }
-
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Button(
-                                    onClick = {
-                                        latitude = 12.9550
-                                        longitude = 77.5800
-                                        selectedArea = "Greenwood Residential Park"
-                                        streetName = "Oak Tree Avenue, 2nd Cross"
-                                        landmarkDetails = "Next to Greenwood Park West Gate"
-                                        pincode = "560034"
-                                        gpsStatusMsg = "📍 Selected on Google Maps: Greenwood Park (12.9550, 77.5800)"
-                                        showMapPicker = false
-                                    },
-                                    colors = ButtonDefaults.buttonColors(containerColor = InfoBlue)
-                                ) { Text("📍 Greenwood Park", fontSize = 10.sp) }
-                            }
+                            Icon(
+                                imageVector = Icons.Default.MyLocation,
+                                contentDescription = null,
+                                tint = EcoDarkGreen,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Text(
+                                text = "Use GPS",
+                                color = EcoDarkGreen,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }
-            },
-            confirmButton = {
-                TextButton(onClick = { showMapPicker = false }) { Text("Close Map") }
+
+                OutlinedTextField(
+                    value = location,
+                    onValueChange = { location = it },
+                    placeholder = {
+                        Text(
+                            "Enter street, nearby landmark, or tap Use GPS",
+                            color = Black.copy(alpha = 0.45f)
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(Icons.Default.LocationOn, contentDescription = null, tint = EcoDarkGreen)
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(16.dp),
+                    colors = fieldColors,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
-        )
+
+            // 3. Description Input
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                FieldHeader(title = "Description", subtitle = "Provide details to help cleanup crews")
+
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    placeholder = {
+                        Text(
+                            "Describe severity, approximate size, or hazards...",
+                            color = Black.copy(alpha = 0.45f)
+                        )
+                    },
+                    minLines = 3,
+                    maxLines = 5,
+                    shape = RoundedCornerShape(16.dp),
+                    colors = fieldColors,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            // 4. Image Picker & Preview
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                FieldHeader(title = "Photo Evidence", subtitle = "Attach a clear photo of the issue")
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(170.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color.White.copy(alpha = 0.7f))
+                        .border(
+                            BorderStroke(1.5.dp, EcoDarkGreen.copy(alpha = 0.35f)),
+                            RoundedCornerShape(16.dp)
+                        )
+                        .clickable {
+                            platformHandler.launchImagePicker { bytes, bitmap ->
+                                imageBytes = bytes
+                                imagePreview = bitmap
+                            }
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (imagePreview != null) {
+                        Image(
+                            bitmap = imagePreview!!,
+                            contentDescription = "Selected issue photo",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                        IconButton(
+                            onClick = {
+                                imagePreview = null
+                                imageBytes = null
+                            },
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(8.dp)
+                                .size(32.dp)
+                                .background(Black.copy(alpha = 0.65f), CircleShape)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Remove photo",
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    } else {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AddPhotoAlternate,
+                                contentDescription = "Upload photo",
+                                tint = EcoDarkGreen,
+                                modifier = Modifier.size(36.dp)
+                            )
+                            Text(
+                                text = "Tap to select or upload photo",
+                                color = EcoDarkGreen,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp
+                            )
+                            Text(
+                                text = "JPG, PNG supported",
+                                color = Black.copy(alpha = 0.45f),
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // 5. Submit Button
+            val isFormValid = selectedCategory != null && description.isNotBlank() && location.isNotBlank()
+
+            Button(
+                onClick = {
+                    selectedCategory?.let { category ->
+                        onSubmitReport(
+                            WasteReportDraft(
+                                category = category,
+                                description = description.trim(),
+                                location = location.trim(),
+                                imageBytes = imageBytes
+                            )
+                        )
+                    }
+                },
+                enabled = isFormValid,
+                shape = RoundedCornerShape(50),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = EcoGreen,
+                    contentColor = Color.White,
+                    disabledContainerColor = EcoGreen.copy(alpha = 0.4f),
+                    disabledContentColor = Color.White.copy(alpha = 0.7f)
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+            ) {
+                Text(
+                    text = "Submit Report",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
     }
 }
 
 @Composable
-fun TrackComplaintsScreen(repository: WasteManRepository, onComplaintClick: (Complaint) -> Unit) {
-    var statusFilter by remember { mutableStateOf("ALL") }
+private fun FieldHeader(title: String, subtitle: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+        Text(
+            text = title,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            color = Black
+        )
+        Text(
+            text = subtitle,
+            fontSize = 12.sp,
+            color = Black.copy(alpha = 0.6f)
+        )
+    }
+}
+enum class ReportStatus(val label: String) {
+    PENDING("Pending"),
+    IN_PROGRESS("In Progress"),
+    SOLVED("Solved")
+}
 
-    Column(modifier = Modifier.fillMaxSize()) {
+data class WasteReportItem(
+    val id: String,
+    val reporterName: String = "Citizen",
+    val category: WasteCategory,
+    val description: String,
+    val location: String,
+    val timestamp: String,
+    val status: ReportStatus,
+    val thumbnail: ImageBitmap? = null
+)
+
+/**
+ * KMP Repository/Data Interface: Implement in commonMain (e.g., via Ktor client)
+ * to handle report clicks and admin status updates.
+ */
+interface MyReportsHandler {
+    fun onReportClick(report: WasteReportItem) {}
+    fun onStatusUpdate(reportId: String, newStatus: ReportStatus) {}
+    fun onRefresh() {}
+}
+
+@Composable
+fun MyReportsContent(
+    reports: List<WasteReportItem>,
+    handler: MyReportsHandler,
+    isAdmin: Boolean = false,
+    isLoading: Boolean = false,
+    modifier: Modifier = Modifier
+) {
+    var selectedStatusFilter by remember { mutableStateOf<ReportStatus?>(null) }
+    var selectedCategoryFilter by remember { mutableStateOf<WasteCategory?>(null) }
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedReportForDetail by remember { mutableStateOf<WasteReportItem?>(null) }
+
+    // Keep open popup synchronized if parent list updates status
+    val activeDetailReport = remember(selectedReportForDetail, reports) {
+        selectedReportForDetail?.let { current ->
+            reports.find { it.id == current.id } ?: current
+        }
+    }
+
+    val filteredReports = remember(reports, selectedStatusFilter, selectedCategoryFilter, searchQuery) {
+        val query = searchQuery.trim().lowercase()
+        reports.filter { report ->
+            val matchesStatus = selectedStatusFilter == null || report.status == selectedStatusFilter
+            val matchesCategory = selectedCategoryFilter == null || report.category == selectedCategoryFilter
+            val matchesQuery = query.isEmpty() ||
+                    report.id.lowercase().contains(query) ||
+                    report.reporterName.lowercase().contains(query) ||
+                    report.category.displayName.lowercase().contains(query) ||
+                    report.timestamp.lowercase().contains(query) ||
+                    report.description.lowercase().contains(query) ||
+                    report.location.lowercase().contains(query)
+
+            matchesStatus && matchesCategory && matchesQuery
+        }
+    }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Heading + Admin Badge + Count Badge
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Track Reports", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = EcoGreen, fontSize = 18.sp)
-
-            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                listOf("ALL", "SUBMITTED", "IN_PROGRESS", "RESOLVED").forEach { st ->
-                    FilterChip(
-                        selected = statusFilter == st,
-                        onClick = { statusFilter = st },
-                        label = { Text(st.replace("_", " "), fontSize = 10.sp) }
-                    )
-                }
-            }
-        }
-        Spacer(modifier = Modifier.height(10.dp))
-
-        val filteredList = repository.complaints.filter { statusFilter == "ALL" || it.status.name == statusFilter }
-
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            items(filteredList) { complaint ->
-                ComplaintCard(complaint) { onComplaintClick(complaint) }
-            }
-        }
-    }
-}
-
-// Complaint Card with Photo & Google Map Preview Button
-@Composable
-fun ComplaintCard(complaint: Complaint, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable { onClick() },
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Badge(
-                    containerColor = when (complaint.status) {
-                        ComplaintStatus.SUBMITTED -> WarningAmber
-                        ComplaintStatus.IN_PROGRESS -> InfoBlue
-                        ComplaintStatus.RESOLVED -> EcoGreen
-                    }
-                ) {
-                    Text(complaint.status.displayName, color = Color.White, modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp), fontSize = 10.sp)
-                }
-                Text("📍 ${complaint.area}", fontWeight = FontWeight.Bold, color = EcoGreen, fontSize = 11.sp)
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(complaint.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-            Text(complaint.description, style = MaterialTheme.typography.bodySmall, color = Color.DarkGray, fontSize = 12.sp, maxLines = 2)
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // Inline Image & Map Action Card
-            if (complaint.imageData != null || complaint.imageUrl != null) {
-                Card(
-                    modifier = Modifier.fillMaxWidth().height(100.dp),
-                    colors = CardDefaults.cardColors(containerColor = EcoLightGreen),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Image, contentDescription = "Photo", tint = EcoGreen)
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("📷 Tap to Maximize Issue & Photo", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = EcoDarkGreen)
-                        }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = if (isAdmin) "All Reports" else "My Reports",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Black
+                )
+                if (isAdmin) {
+                    Surface(
+                        shape = RoundedCornerShape(50),
+                        color = EcoDarkGreen
+                    ) {
+                        Text(
+                            text = "ADMIN",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 10.sp,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(6.dp))
-            Text("📍 ${complaint.locationDetails}", fontSize = 11.sp, color = Color.Gray, maxLines = 1)
-
-            val team = complaint.assignedTeam
-            if (team != null) {
-                Text("👷 Assigned Team: $team", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = EcoDarkGreen)
-            }
-        }
-    }
-}
-
-// 4. Admin Portal
-@Composable
-fun AdminDashboardContent(repository: WasteManRepository, isCompact: Boolean, onComplaintClick: (Complaint) -> Unit) {
-    var areaFilter by remember { mutableStateOf("ALL") }
-    var statusFilter by remember { mutableStateOf("ALL") }
-    var selectedComplaintForAction by remember { mutableStateOf<Complaint?>(null) }
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text("🛡️ Admin Operations Feed", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = EcoDarkGreen, fontSize = if (isCompact) 16.sp else 20.sp)
-            Badge(containerColor = WarningAmber) { Text("ADMIN MODE", color = Color.White, modifier = Modifier.padding(2.dp), fontSize = 10.sp) }
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Filter Controls
-        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                listOf("ALL", "Market Square East", "North Ward Health Corridor", "Greenwood Residential Park").forEach { ar ->
-                    FilterChip(
-                        selected = areaFilter == ar,
-                        onClick = { areaFilter = ar },
-                        label = { Text(ar.take(15) + "...", fontSize = 10.sp) }
-                    )
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                listOf("ALL", "SUBMITTED", "IN_PROGRESS", "RESOLVED").forEach { st ->
-                    FilterChip(
-                        selected = statusFilter == st,
-                        onClick = { statusFilter = st },
-                        label = { Text(st.replace("_", " "), fontSize = 10.sp) }
-                    )
-                }
+            Surface(
+                shape = RoundedCornerShape(50),
+                color = EcoGreen.copy(alpha = 0.15f)
+            ) {
+                Text(
+                    text = "${filteredReports.size} Total",
+                    color = EcoDarkGreen,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                )
             }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
-
-        val filtered = repository.complaints.filter {
-            (areaFilter == "ALL" || it.area == areaFilter) && (statusFilter == "ALL" || it.status.name == statusFilter)
-        }
-
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            items(filtered) { complaint ->
-                Card(
-                    modifier = Modifier.fillMaxWidth().clickable { onComplaintClick(complaint) },
-                    shape = RoundedCornerShape(10.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Badge(
-                                    containerColor = when (complaint.status) {
-                                        ComplaintStatus.SUBMITTED -> WarningAmber
-                                        ComplaintStatus.IN_PROGRESS -> InfoBlue
-                                        ComplaintStatus.RESOLVED -> EcoGreen
-                                    }
-                                ) {
-                                    Text(complaint.status.displayName, color = Color.White, modifier = Modifier.padding(horizontal = 4.dp), fontSize = 10.sp)
-                                }
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("📍 ${complaint.area}", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = EcoDarkGreen)
-                            }
-
-                            Button(
-                                onClick = { selectedComplaintForAction = complaint },
-                                colors = ButtonDefaults.buttonColors(containerColor = EcoGreen),
-                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp)
-                            ) {
-                                Text("Update / Assign", fontSize = 11.sp)
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(complaint.title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Text(complaint.description, fontSize = 12.sp, color = Color.DarkGray, maxLines = 2)
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("📱 Reporter: ${complaint.reporterPhone}", fontSize = 10.sp, color = Color.Gray)
-                            val team = complaint.assignedTeam
-                            Text("👷 Team: ${team ?: "Unassigned"}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (team != null) EcoGreen else AlertRed)
-                        }
+        // Multi-Field Search Bar (Name, Type, Time, Description, Location, ID)
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            placeholder = {
+                Text(
+                    text = "Search name, type, time, description, location...",
+                    color = Black.copy(alpha = 0.45f),
+                    fontSize = 13.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = "Search",
+                    tint = EcoDarkGreen,
+                    modifier = Modifier.size(20.dp)
+                )
+            },
+            trailingIcon = {
+                if (searchQuery.isNotEmpty()) {
+                    IconButton(onClick = { searchQuery = "" }) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Clear search",
+                            tint = Black.copy(alpha = 0.6f),
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
-                }
-            }
-        }
-    }
-
-    if (selectedComplaintForAction != null) {
-        val target = selectedComplaintForAction!!
-        var chosenStatus by remember { mutableStateOf(target.status) }
-        var assignedTeamInput by remember { mutableStateOf(target.assignedTeam ?: "Biohazard Response Team Alpha") }
-
-        AlertDialog(
-            onDismissRequest = { selectedComplaintForAction = null },
-            title = { Text("Update Status & Assign Team") },
-            text = {
-                Column {
-                    Text("Issue: ${target.title}", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Update Status:", fontSize = 12.sp)
-                    ComplaintStatus.entries.forEach { st ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            RadioButton(selected = chosenStatus == st, onClick = { chosenStatus = st })
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(st.displayName, fontSize = 12.sp)
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = assignedTeamInput,
-                        onValueChange = { assignedTeamInput = it },
-                        label = { Text("Assigned Cleanup Crew") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
                 }
             },
-            confirmButton = {
-                Button(onClick = {
-                    repository.updateComplaintStatus(target.id, chosenStatus, assignedTeamInput)
-                    selectedComplaintForAction = null
-                }) {
-                    Text("Save & Dispatch")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { selectedComplaintForAction = null }) { Text("Cancel") }
+            singleLine = true,
+            shape = RoundedCornerShape(16.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = EcoGreen,
+                unfocusedBorderColor = Black.copy(alpha = 0.2f),
+                cursorColor = EcoDarkGreen,
+                focusedTextColor = Black,
+                unfocusedTextColor = Black,
+                focusedContainerColor = Color.White.copy(alpha = 0.85f),
+                unfocusedContainerColor = Color.White.copy(alpha = 0.7f)
+            ),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // Status Filter Pills
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            FilterPill(
+                text = "All Status",
+                selected = selectedStatusFilter == null,
+                onClick = { selectedStatusFilter = null }
+            )
+            ReportStatus.entries.forEach { status ->
+                FilterPill(
+                    text = status.label,
+                    selected = selectedStatusFilter == status,
+                    onClick = { selectedStatusFilter = status }
+                )
             }
+        }
+
+        // Category Type Filter Pills
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            FilterPill(
+                text = "All Types",
+                selected = selectedCategoryFilter == null,
+                onClick = { selectedCategoryFilter = null }
+            )
+            WasteCategory.entries.forEach { category ->
+                FilterPill(
+                    text = category.displayName,
+                    selected = selectedCategoryFilter == category,
+                    onClick = { selectedCategoryFilter = category }
+                )
+            }
+        }
+
+        // Reports List / Loading / Empty State
+        when {
+            isLoading -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = EcoGreen)
+                }
+            }
+
+            filteredReports.isEmpty() -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.History,
+                            contentDescription = null,
+                            tint = EcoDarkGreen.copy(alpha = 0.5f),
+                            modifier = Modifier.size(44.dp)
+                        )
+                        Text(
+                            text = "No matching reports found",
+                            color = Black.copy(alpha = 0.65f),
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 15.sp
+                        )
+                    }
+                }
+            }
+
+            else -> {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(bottom = 8.dp)
+                ) {
+                    items(filteredReports, key = { it.id }) { report ->
+                        ReportCard(
+                            report = report,
+                            isAdmin = isAdmin,
+                            onStatusChange = { newStatus ->
+                                handler.onStatusUpdate(report.id, newStatus)
+                            },
+                            onClick = {
+                                selectedReportForDetail = report
+                                handler.onReportClick(report)
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    // Maximized Detailed Popup Dialog on Card Click
+    activeDetailReport?.let { report ->
+        ReportDetailDialog(
+            report = report,
+            isAdmin = isAdmin,
+            onStatusUpdate = { newStatus ->
+                handler.onStatusUpdate(report.id, newStatus)
+            },
+            onDismiss = { selectedReportForDetail = null }
         )
     }
 }
 
-// MAXIMIZED Issue & Full-Size Photo Modal Dialog with Google Maps Integration
 @Composable
-fun MaximizedIssueDialog(complaint: Complaint, onDismiss: () -> Unit) {
-    val lat = complaint.latitude ?: 12.9716
-    val lng = complaint.longitude ?: 77.5946
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("🔍 Issue Details & Google Maps Pin", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                Badge(
-                    containerColor = when (complaint.status) {
-                        ComplaintStatus.SUBMITTED -> WarningAmber
-                        ComplaintStatus.IN_PROGRESS -> InfoBlue
-                        ComplaintStatus.RESOLVED -> EcoGreen
-                    }
-                ) {
-                    Text(complaint.status.displayName, color = Color.White, modifier = Modifier.padding(horizontal = 4.dp))
-                }
-            }
-        },
-        text = {
-            LazyColumn(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                item {
-                    Text(complaint.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(complaint.description, style = MaterialTheme.typography.bodyMedium, color = Color.DarkGray)
-                }
-
-                // MAXIMIZED Photo Card View
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth().height(220.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = EcoLightGreen)
-                    ) {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(Icons.Default.Image, contentDescription = "Photo", tint = EcoGreen, modifier = Modifier.size(64.dp))
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text("📷 Maximized Photo View", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = EcoDarkGreen)
-                                Text("High-resolution site photo verified", fontSize = 11.sp, color = Color.Gray)
-                            }
-                        }
-                    }
-                }
-
-                // Embedded GOOGLE MAPS Location Card & Action Button
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F0FE)),
-                        border = BorderStroke(1.dp, InfoBlue.copy(alpha = 0.4f)),
-                        shape = RoundedCornerShape(10.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Map, contentDescription = null, tint = InfoBlue, modifier = Modifier.size(20.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("🗺️ GOOGLE MAPS SITE LOCATION", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = InfoBlue)
-                            }
-
-                            Text("• Street: ${complaint.street ?: "14th Commercial Main Road"}", fontSize = 12.sp)
-                            Text("• Landmark: ${complaint.landmark ?: "Opposite Central Bus Stop Gate 3"}", fontSize = 12.sp)
-                            Text("• Area Sector: ${complaint.area}", fontSize = 12.sp)
-                            Text("• Pincode: ${complaint.pincode ?: "560001"}", fontSize = 12.sp)
-                            Text("• GPS Pin: $lat° N, $lng° E", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = InfoBlue)
-
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Button(
-                                onClick = { openInGoogleMaps(lat, lng, complaint.locationDetails) },
-                                colors = ButtonDefaults.buttonColors(containerColor = InfoBlue),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Icon(Icons.Default.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Open Directions in Google Maps", fontSize = 12.sp)
-                            }
-                        }
-                    }
-                }
-
-                // Operations & Reporter Info
-                item {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("📱 Reporter Phone: ${complaint.reporterPhone}", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                        val team = complaint.assignedTeam
-                        Text("👷 Assigned Crew: ${team ?: "Pending Dispatch"}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (team != null) EcoGreen else AlertRed)
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            Button(onClick = onDismiss) { Text("Close") }
-        }
-    )
-}
-
-@Composable
-fun LoginDialog(repository: WasteManRepository, onDone: () -> Unit) {
-    var phoneInput by remember { mutableStateOf("9999999999") }
-
-    AlertDialog(
-        onDismissRequest = onDone,
-        title = { Text("👤 Sign In / Switch Role") },
-        text = {
-            Column {
-                Text("Enter phone number to access profile or admin tools:", fontSize = 12.sp, color = Color.Gray)
-                Spacer(modifier = Modifier.height(10.dp))
-                OutlinedTextField(
-                    value = phoneInput,
-                    onValueChange = { input ->
-                        val digits = input.filter { it.isDigit() }
-                        if (digits.length <= 10) phoneInput = digits
-                    },
-                    label = { Text("Phone Number") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                Text("💡 Tip: 9999999999 or numbers ending in 99 access Admin Mode.", fontSize = 11.sp, color = Color.DarkGray)
-            }
-        },
-        confirmButton = {
-            Button(onClick = {
-                if (phoneInput.length == 10) {
-                    repository.login(phoneInput)
-                    onDone()
-                }
-            }) {
-                Text("Continue")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDone) { Text("Cancel") }
-        }
-    )
-}
-
-@Composable
-fun StatCard(title: String, value: String, color: Color, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = color),
-        shape = RoundedCornerShape(10.dp)
+private fun ReportCard(
+    report: WasteReportItem,
+    isAdmin: Boolean,
+    onStatusChange: (ReportStatus) -> Unit,
+    onClick: () -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(18.dp),
+        color = Color.White.copy(alpha = 0.8f),
+        border = BorderStroke(1.dp, Black.copy(alpha = 0.08f)),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .clickable(onClick = onClick)
     ) {
-        Column(
-            modifier = Modifier.padding(10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(title, color = Color.White.copy(alpha = 0.9f), fontSize = 10.sp)
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(value, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            // Thumbnail Preview
+            Box(
+                modifier = Modifier
+                    .size(76.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(EcoLightGreen),
+                contentAlignment = Alignment.Center
+            ) {
+                if (report.thumbnail != null) {
+                    Image(
+                        bitmap = report.thumbnail,
+                        contentDescription = report.category.displayName,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Image,
+                        contentDescription = null,
+                        tint = EcoDarkGreen.copy(alpha = 0.45f),
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+            }
+
+            // Report Details
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = report.category.displayName,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        color = Black,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+
+                    if (isAdmin) {
+                        AdminStatusDropdownChip(
+                            currentStatus = report.status,
+                            onStatusSelected = onStatusChange
+                        )
+                    } else {
+                        StatusBadge(status = report.status)
+                    }
+                }
+
+                // Reporter Name (highlighted when admin views all reports)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = null,
+                        tint = Black.copy(alpha = 0.55f),
+                        modifier = Modifier.size(13.dp)
+                    )
+                    Text(
+                        text = "${report.reporterName} • #${report.id}",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Black.copy(alpha = 0.65f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                Text(
+                    text = report.description,
+                    fontSize = 13.sp,
+                    color = Black.copy(alpha = 0.78f),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.LocationOn,
+                        contentDescription = null,
+                        tint = EcoDarkGreen,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Text(
+                        text = "${report.location} • ${report.timestamp}",
+                        fontSize = 12.sp,
+                        color = Black.copy(alpha = 0.55f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+    }
+}
+@Composable
+private fun StatusBadge(status: ReportStatus) {
+    val (bgColor, textColor, icon) = when (status) {
+        ReportStatus.SOLVED -> Triple(
+            EcoGreen.copy(alpha = 0.18f),
+            EcoDarkGreen,
+            Icons.Default.CheckCircle
+        )
+        ReportStatus.IN_PROGRESS -> Triple(
+            Color(0xFFFFA000).copy(alpha = 0.18f),
+            Color(0xFF8D5400),
+            Icons.Default.Schedule
+        )
+        ReportStatus.PENDING -> Triple(
+            Black.copy(alpha = 0.1f),
+            Black.copy(alpha = 0.7f),
+            Icons.Default.Schedule
+        )
+    }
+
+    Surface(
+        shape = RoundedCornerShape(50),
+        color = bgColor
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = textColor,
+                modifier = Modifier.size(12.dp)
+            )
+            Text(
+                text = status.label,
+                color = textColor,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 11.sp
+            )
+        }
+    }
+}
+@Composable
+private fun ReportDetailDialog(
+    report: WasteReportItem,
+    isAdmin: Boolean,
+    onStatusUpdate: (ReportStatus) -> Unit,
+    onDismiss: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.92f)
+                .widthIn(max = 560.dp)
+                .fillMaxHeight(0.86f),
+            shape = RoundedCornerShape(28.dp),
+            color = EcoLightGreen,
+            tonalElevation = 6.dp
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                // Header Row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = report.category.displayName,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Black
+                        )
+                        Text(
+                            text = "Report ID: #${report.id}",
+                            fontSize = 12.sp,
+                            color = Black.copy(alpha = 0.6f)
+                        )
+                    }
+
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(Black.copy(alpha = 0.1f), CircleShape)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close details",
+                            tint = Black
+                        )
+                    }
+                }
+
+                // Scrollable Body
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    // Maximized Photo Preview
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(240.dp)
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(Color.White.copy(alpha = 0.65f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (report.thumbnail != null) {
+                            Image(
+                                bitmap = report.thumbnail,
+                                contentDescription = report.category.displayName,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Image,
+                                    contentDescription = null,
+                                    tint = EcoDarkGreen.copy(alpha = 0.45f),
+                                    modifier = Modifier.size(44.dp)
+                                )
+                                Text(
+                                    text = "No photo attached",
+                                    fontSize = 13.sp,
+                                    color = Black.copy(alpha = 0.5f)
+                                )
+                            }
+                        }
+                    }
+
+                    // Metadata Card
+                    Surface(
+                        shape = RoundedCornerShape(18.dp),
+                        color = Color.White.copy(alpha = 0.75f),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            DetailMetaRow(
+                                icon = Icons.Default.Person,
+                                label = "Reported By",
+                                value = report.reporterName
+                            )
+                            DetailMetaRow(
+                                icon = Icons.Default.LocationOn,
+                                label = "Location",
+                                value = report.location
+                            )
+                            DetailMetaRow(
+                                icon = Icons.Default.Schedule,
+                                label = "Submitted",
+                                value = report.timestamp
+                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "Current Status:",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Black.copy(alpha = 0.7f)
+                                )
+                                StatusBadge(status = report.status)
+                            }
+                        }
+                    }
+
+                    // Full Description
+                    Surface(
+                        shape = RoundedCornerShape(18.dp),
+                        color = Color.White.copy(alpha = 0.75f),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = "Issue Description",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Black
+                            )
+                            Text(
+                                text = report.description,
+                                fontSize = 14.sp,
+                                color = Black.copy(alpha = 0.85f),
+                                lineHeight = 20.sp
+                            )
+                        }
+                    }
+
+                    // Admin Status Control Panel
+                    if (isAdmin) {
+                        Surface(
+                            shape = RoundedCornerShape(18.dp),
+                            color = EcoGreen.copy(alpha = 0.14f),
+                            border = BorderStroke(1.dp, EcoDarkGreen.copy(alpha = 0.25f)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(14.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Text(
+                                    text = "Admin: Update Resolution Status",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = EcoDarkGreen
+                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    ReportStatus.entries.forEach { status ->
+                                        val isCurrent = report.status == status
+                                        Surface(
+                                            shape = RoundedCornerShape(50),
+                                            color = if (isCurrent) EcoGreen else Color.White,
+                                            border = if (isCurrent) null else BorderStroke(
+                                                1.dp,
+                                                Black.copy(alpha = 0.2f)
+                                            ),
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clip(RoundedCornerShape(50))
+                                                .clickable { onStatusUpdate(status) }
+                                        ) {
+                                            Box(
+                                                contentAlignment = Alignment.Center,
+                                                modifier = Modifier.padding(vertical = 10.dp)
+                                            ) {
+                                                Text(
+                                                    text = status.label,
+                                                    color = if (isCurrent) Color.White else Black,
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 12.sp
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AdminStatusDropdownChip(
+    currentStatus: ReportStatus,
+    onStatusSelected: (ReportStatus) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Box {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .clip(RoundedCornerShape(50))
+                .clickable { expanded = true }
+        ) {
+            StatusBadge(status = currentStatus)
+            Icon(
+                imageVector = Icons.Default.ArrowDropDown,
+                contentDescription = "Change status",
+                tint = EcoDarkGreen,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.background(Color.White)
+        ) {
+            ReportStatus.entries.forEach { status ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            text = status.label,
+                            fontWeight = if (status == currentStatus) FontWeight.Bold else FontWeight.Normal,
+                            color = if (status == currentStatus) EcoDarkGreen else Black
+                        )
+                    },
+                    onClick = {
+                        onStatusSelected(status)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DetailMetaRow(
+    icon: ImageVector,
+    label: String,
+    value: String
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = EcoDarkGreen,
+            modifier = Modifier.size(18.dp)
+        )
+        Text(
+            text = "$label:",
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Black.copy(alpha = 0.7f)
+        )
+        Text(
+            text = value,
+            fontSize = 13.sp,
+            color = Black,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+@Composable
+private fun FilterPill(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(50),
+        color = if (selected) EcoGreen else Color.White.copy(alpha = 0.65f),
+        border = if (selected) null else BorderStroke(1.dp, Black.copy(alpha = 0.15f)),
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .clickable(onClick = onClick)
+    ) {
+        Text(
+            text = text,
+            color = if (selected) Color.White else Black.copy(alpha = 0.75f),
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            fontSize = 13.sp,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
+        )
+    }
+}
+@Composable
+fun Screen2() {
+    val state = remember { AppState() }
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val isCompact = maxWidth < 600.dp
+        Column(
+            modifier = Modifier.fillMaxSize().safeContentPadding()
+                .background(EcoGreen).padding(10.dp)
+        ) {
+            HeaderBar(isCompact, state)
+            NavBar(state)
+            Column(
+                modifier = Modifier.shadow(
+                    5.dp,
+                    RoundedCornerShape(20.dp),
+                    spotColor = EcoLightGreen,
+                    ambientColor = EcoLightGreen
+                )
+                    .background(EcoLightGreen, RoundedCornerShape(20.dp))
+                    .fillMaxSize()
+            ) {
+                when (state.activeTab) {
+                    AppTab.HOME -> HomeScreen()
+                    AppTab.REPORT -> AddReportContent()
+                    AppTab.ISSUES -> MyReportsContent()
+                    AppTab.ADMIN -> MyReportsContent(isAdmin = state.isAdmin)
+                    AppTab.LOGIN -> LoginScreen()
+                }
+            }
         }
     }
 }
