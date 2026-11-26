@@ -33,6 +33,7 @@
     1. **Snap & Tag**: Open the app, snap or upload a photo, and pick the category (`Overflowing Bins`, `Plastic Waste`, `E-Waste`, etc.).
     2. **Pinpoint Location**: Click **Use GPS** for one-tap browser geolocation or search and pick a landmark on the interactive **Google Maps** modal.
     3. **Track Live**: Watch the status change from **Pending** ➔ **In Progress** ➔ **Solved** on your personal dashboard.
+    4. **Ability to Call to report**: Let users to call to register a complaint, potentially let an AI to handle the user request.
 - **Admin Workflow**:
     - Municipal supervisors log in with verified admin credentials to view un-sanitized reports with contact phone numbers, filter by recency/type, and update resolution states in real time.
 
