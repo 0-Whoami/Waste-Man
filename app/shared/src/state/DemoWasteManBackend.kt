@@ -104,15 +104,23 @@ class DemoWasteManBackend : WasteManBackend {
         NewsAnnouncement(
             id = "3",
             icon = NewsIconType.VOLUNTEER,
-            heading = "76% Resolved!",
-            content = "Thanks to citizen reports, 76 waste hotspots were cleared across the city this month."
+            heading = "Community Cleanup",
+            content = "Report overflowing bins or illegal dumping in seconds to help local crews clear hotspots faster."
         )
+    )
+
+    private val adminPhoneDigits = setOf(
+        "9876543210",
+        "0000000000",
+        "9999999999",
+        "1234567890"
     )
 
     override suspend fun sendOtpOrLogin(phoneNumber: String): Result<UserSession> {
         delay(350)
         currentPhone = phoneNumber
-        val isAdmin = phoneNumber.endsWith("0000") || phoneNumber.endsWith("3210")
+        val lastTen = phoneNumber.filter { it.isDigit() }.takeLast(10)
+        val isAdmin = adminPhoneDigits.contains(lastTen)
         return Result.success(
             UserSession(
                 phoneNumber = phoneNumber,
@@ -167,9 +175,10 @@ class DemoWasteManBackend : WasteManBackend {
         return Result.success(Unit)
     }
 
-    override suspend fun fetchDashboardStats(): Result<IssueStats> {
-        val total = 95 + demoReports.size
-        val solved = 73 + demoReports.count { it.status == ReportStatus.SOLVED }
-        return Result.success(IssueStats(total = total, solved = solved))
-    }
+    override suspend fun fetchDashboardStats(): Result<IssueStats> = Result.success(
+        IssueStats(
+            total = demoReports.size,
+            solved = demoReports.count { it.status == ReportStatus.SOLVED }
+        )
+    )
 }

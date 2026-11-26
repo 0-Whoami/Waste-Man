@@ -1,8 +1,29 @@
+# Build & Toolchain outputs
 *.iml
-.kotlin
+.kotlin/
+.amper/
 build/
+
+# Runtime server data & uploaded user media
+data/
+uploads/
+server/uploads/
+server/data/
+
+# IDE & OS files
+.idea/workspace.xml
+.idea/shelf/
+.idea/caches/
+.idea/usage.statistics.xml
+local.properties
+captures/
+*.log
+*.hprof
 .DS_Store
-captures
+Thumbs.db
+desktop.ini
+
+# Apple Xcode (KMP iOS/macOS)
 **/module.xcodeproj/*
 !**/module.xcodeproj/project.pbxproj
 !**/module.xcodeproj/xcshareddata/

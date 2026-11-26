@@ -42,6 +42,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -69,9 +70,18 @@ fun ReportCard(
 ) {
     Surface(
         shape = RoundedCornerShape(18.dp),
-        color = Color.White.copy(alpha = 0.85f),
-        border = BorderStroke(1.dp, Black.copy(alpha = 0.08f)),
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).clickable(onClick = onClick)
+        color = Color.White.copy(alpha = 0.88f),
+        border = BorderStroke(1.dp, Black.copy(alpha = 0.07f)),
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 2.dp,
+                shape = RoundedCornerShape(18.dp),
+                ambientColor = Black.copy(alpha = 0.08f),
+                spotColor = Black.copy(alpha = 0.12f)
+            )
+            .clip(RoundedCornerShape(18.dp))
+            .clickable(onClick = onClick)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
@@ -227,10 +237,15 @@ fun ReportDetailDialog(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
                 .widthIn(max = 560.dp)
-                .fillMaxHeight(0.86f),
+                .fillMaxHeight(0.86f)
+                .shadow(
+                    elevation = 10.dp,
+                    shape = RoundedCornerShape(28.dp),
+                    ambientColor = Black.copy(alpha = 0.14f),
+                    spotColor = Black.copy(alpha = 0.18f)
+                ),
             shape = RoundedCornerShape(28.dp),
-            color = EcoLightGreen,
-            tonalElevation = 6.dp
+            color = EcoLightGreen
         ) {
             Column(
                 modifier = Modifier.fillMaxSize().padding(20.dp),

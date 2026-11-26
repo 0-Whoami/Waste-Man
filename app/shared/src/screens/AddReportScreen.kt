@@ -1,5 +1,12 @@
 package com.example.wasteman.screens
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -85,6 +92,8 @@ fun AddReportContent(
     var location by remember { mutableStateOf("") }
     var imageBytes by remember { mutableStateOf<ByteArray?>(null) }
     var imagePreview by remember { mutableStateOf<ImageBitmap?>(null) }
+    var isFetchingGps by remember { mutableStateOf(false) }
+    var isOpeningMap by remember { mutableStateOf(false) }
 
     val fieldColors = wasteManFieldColors()
     val previewAspectRatio = remember(imagePreview) { computeClampedAspectRatio(imagePreview) }
@@ -180,28 +189,62 @@ fun AddReportContent(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     LocationActionChip(
                         icon = Icons.Default.MyLocation,
-                        label = "Use GPS",
+                        label = if (isFetchingGps) "Locating..." else "Use GPS",
+                        isLoading = isFetchingGps,
+                        enabled = !isFetchingGps,
                         onClick = {
-                            platformHandler.fetchCurrentLocation { fetched -> location = fetched }
+                            isFetchingGps = true
+                            platformHandler.fetchCurrentLocation { fetched ->
+                                location = fetched
+                                isFetchingGps = false
+                            }
                         }
                     )
                     LocationActionChip(
                         icon = Icons.Default.Map,
                         label = "Google Maps",
+                        isLoading = isOpeningMap,
+                        enabled = !isOpeningMap,
                         onClick = {
-                            platformHandler.launchMapLocationPicker { picked -> location = picked }
+                            isOpeningMap = true
+                            platformHandler.launchMapLocationPicker(
+                                onLocationPicked = { picked ->
+                                    location = picked
+                                    isOpeningMap = false
+                                },
+                                onDismiss = {
+                                    isOpeningMap = false
+                                }
+                            )
                         }
                     )
                 }
             }
 
+            val isLocationLoading = isFetchingGps || isOpeningMap
             OutlinedTextField(
                 value = location,
                 onValueChange = { location = it },
                 placeholder = {
                     Text("Enter street, landmark, or pick on Google Maps", color = Black.copy(alpha = 0.45f))
                 },
-                leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null, tint = EcoDarkGreen) },
+                leadingIcon = {
+                    AnimatedContent(
+                        targetState = isLocationLoading,
+                        transitionSpec = { fadeIn(tween(180)) togetherWith fadeOut(tween(140)) },
+                        label = "locationIconLoading"
+                    ) { loading ->
+                        if (loading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                                color = EcoDarkGreen
+                            )
+                        } else {
+                            Icon(Icons.Default.LocationOn, contentDescription = null, tint = EcoDarkGreen)
+                        }
+                    }
+                },
                 singleLine = true,
                 shape = RoundedCornerShape(16.dp),
                 colors = fieldColors,
@@ -232,6 +275,7 @@ fun AddReportContent(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .animateContentSize()
                     .then(
                         if (previewAspectRatio != null) Modifier.aspectRatio(previewAspectRatio)
                         else Modifier.height(170.dp)
@@ -247,34 +291,44 @@ fun AddReportContent(
                     },
                 contentAlignment = Alignment.Center
             ) {
-                if (imagePreview != null) {
-                    Image(
-                        bitmap = imagePreview!!,
-                        contentDescription = "Selected issue photo",
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                    IconButton(
-                        onClick = {
-                            imagePreview = null
-                            imageBytes = null
-                        },
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(8.dp)
-                            .size(32.dp)
-                            .background(Black.copy(alpha = 0.65f), CircleShape)
-                    ) {
-                        Icon(Icons.Default.Close, contentDescription = "Remove photo", tint = Color.White, modifier = Modifier.size(18.dp))
-                    }
-                } else {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(Icons.Default.AddPhotoAlternate, contentDescription = null, tint = EcoDarkGreen, modifier = Modifier.size(36.dp))
-                        Text("Tap to select or upload photo", color = EcoDarkGreen, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                        Text("JPG, PNG supported", color = Black.copy(alpha = 0.45f), fontSize = 12.sp)
+                AnimatedContent(
+                    targetState = imagePreview,
+                    transitionSpec = {
+                        (fadeIn(tween(220)) + scaleIn(initialScale = 0.96f)) togetherWith fadeOut(tween(150))
+                    },
+                    label = "photoEvidenceTransition"
+                ) { preview ->
+                    if (preview != null) {
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            Image(
+                                bitmap = preview,
+                                contentDescription = "Selected issue photo",
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                            IconButton(
+                                onClick = {
+                                    imagePreview = null
+                                    imageBytes = null
+                                },
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(8.dp)
+                                    .size(32.dp)
+                                    .background(Black.copy(alpha = 0.65f), CircleShape)
+                            ) {
+                                Icon(Icons.Default.Close, contentDescription = "Remove photo", tint = Color.White, modifier = Modifier.size(18.dp))
+                            }
+                        }
+                    } else {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(Icons.Default.AddPhotoAlternate, contentDescription = null, tint = EcoDarkGreen, modifier = Modifier.size(36.dp))
+                            Text("Tap to select or upload photo", color = EcoDarkGreen, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                            Text("JPG, PNG supported", color = Black.copy(alpha = 0.45f), fontSize = 12.sp)
+                        }
                     }
                 }
             }
@@ -316,6 +370,8 @@ fun AddReportContent(
 private fun LocationActionChip(
     icon: ImageVector,
     label: String,
+    isLoading: Boolean = false,
+    enabled: Boolean = true,
     onClick: () -> Unit
 ) {
     Surface(
@@ -323,14 +379,22 @@ private fun LocationActionChip(
         color = EcoGreen.copy(alpha = 0.15f),
         modifier = Modifier
             .clip(RoundedCornerShape(50))
-            .clickable(onClick = onClick)
+            .clickable(enabled = enabled, onClick = onClick)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Icon(icon, contentDescription = null, tint = EcoDarkGreen, modifier = Modifier.size(14.dp))
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(14.dp),
+                    strokeWidth = 2.dp,
+                    color = EcoDarkGreen
+                )
+            } else {
+                Icon(icon, contentDescription = null, tint = EcoDarkGreen, modifier = Modifier.size(14.dp))
+            }
             Text(label, color = EcoDarkGreen, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         }
     }

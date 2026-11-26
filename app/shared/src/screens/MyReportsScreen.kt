@@ -1,10 +1,15 @@
 package com.example.wasteman.screens
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -80,8 +85,10 @@ fun MyReportsContent(
     var searchQuery by remember { mutableStateOf("") }
     var selectedReportForDetail by remember { mutableStateOf<WasteReportItem?>(null) }
 
-    val activeDetailReport = remember(selectedReportForDetail, reports) {
-        selectedReportForDetail?.let { current -> reports.find { it.id == current.id } ?: current }
+    val reportsSnapshot = reports.toList()
+
+    val activeDetailReport = remember(selectedReportForDetail, reportsSnapshot) {
+        selectedReportForDetail?.let { current -> reportsSnapshot.find { it.id == current.id } ?: current }
     }
 
     val activeFilterCount = remember(selectedStatusFilter, selectedCategoryFilter, selectedTimeFilter) {
@@ -93,7 +100,7 @@ fun MyReportsContent(
     }
 
     val filteredReports = remember(
-        reports,
+        reportsSnapshot,
         selectedStatusFilter,
         selectedCategoryFilter,
         selectedTimeFilter,
@@ -102,7 +109,7 @@ fun MyReportsContent(
         referenceNowMillis
     ) {
         val query = searchQuery.trim().lowercase()
-        reports.filter { report ->
+        reportsSnapshot.filter { report ->
             val matchesStatus = (selectedStatusFilter == null) || (report.status == selectedStatusFilter)
             val matchesCategory = (selectedCategoryFilter == null) || (report.category == selectedCategoryFilter)
 
@@ -169,7 +176,11 @@ fun MyReportsContent(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    if (activeFilterCount > 0 || searchQuery.isNotBlank()) {
+                    AnimatedVisibility(
+                        visible = activeFilterCount > 0 || searchQuery.isNotBlank(),
+                        enter = fadeIn(tween(180)) + scaleIn(initialScale = 0.88f),
+                        exit = fadeOut(tween(150)) + scaleOut(targetScale = 0.88f)
+                    ) {
                         Surface(
                             shape = RoundedCornerShape(50),
                             color = AlertRed.copy(alpha = 0.12f),
@@ -257,7 +268,10 @@ fun MyReportsContent(
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(
-                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState())
+                            .padding(horizontal = 2.dp, vertical = 3.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         ReportTimeFilter.entries.forEach { timeFilter ->
@@ -270,7 +284,10 @@ fun MyReportsContent(
                     }
 
                     Row(
-                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState())
+                            .padding(horizontal = 2.dp, vertical = 3.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         FilterPill(text = "All Status", selected = selectedStatusFilter == null) {
@@ -284,7 +301,10 @@ fun MyReportsContent(
                     }
 
                     Row(
-                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState())
+                            .padding(horizontal = 2.dp, vertical = 3.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         FilterPill(text = "All Types", selected = selectedCategoryFilter == null) {
@@ -299,31 +319,60 @@ fun MyReportsContent(
                 }
             }
 
-            when {
-                isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = EcoGreen)
-                }
+            val reportsContentState = when {
+                isLoading -> 0
+                filteredReports.isEmpty() -> 1
+                else -> 2
+            }
 
-                filteredReports.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Icon(Icons.Default.History, contentDescription = null, tint = EcoDarkGreen.copy(alpha = 0.5f), modifier = Modifier.size(44.dp))
-                        Text("No matching reports found", color = Black.copy(alpha = 0.65f), fontWeight = FontWeight.Medium)
+            AnimatedContent(
+                targetState = reportsContentState,
+                transitionSpec = { fadeIn(tween(220)) togetherWith fadeOut(tween(160)) },
+                label = "reportsListTransition"
+            ) { state ->
+                when (state) {
+                    0 -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            CircularProgressIndicator(
+                                color = EcoGreen,
+                                strokeWidth = 3.5.dp,
+                                modifier = Modifier.size(40.dp)
+                            )
+                            Text(
+                                text = "Loading reports...",
+                                color = EcoDarkGreen,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp
+                            )
+                        }
                     }
-                }
 
-                else -> LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(bottom = 8.dp)
-                ) {
-                    items(filteredReports, key = { it.id }) { report ->
-                        ReportCard(
-                            report = report,
-                            thumbnail = resolveThumbnail(report),
-                            isAdmin = isAdmin,
-                            onStatusChange = { newStatus -> onStatusUpdate(report.id, newStatus) },
-                            onClick = { selectedReportForDetail = report }
-                        )
+                    1 -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Icon(Icons.Default.History, contentDescription = null, tint = EcoDarkGreen.copy(alpha = 0.5f), modifier = Modifier.size(44.dp))
+                            Text("No matching reports found", color = Black.copy(alpha = 0.65f), fontWeight = FontWeight.Medium)
+                        }
+                    }
+
+                    else -> LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        contentPadding = PaddingValues(horizontal = 2.dp, vertical = 6.dp)
+                    ) {
+                        items(filteredReports, key = { it.id }) { report ->
+                            Box(modifier = Modifier.animateItem()) {
+                                ReportCard(
+                                    report = report,
+                                    thumbnail = resolveThumbnail(report),
+                                    isAdmin = isAdmin,
+                                    onStatusChange = { newStatus -> onStatusUpdate(report.id, newStatus) },
+                                    onClick = { selectedReportForDetail = report }
+                                )
+                            }
+                        }
                     }
                 }
             }

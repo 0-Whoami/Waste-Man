@@ -21,14 +21,15 @@ import com.example.wasteman.platform.createPlatformHandler
 enum class AppTab { HOME, REPORT, ISSUES, ADMIN, LOGIN }
 
 class AppState(
-    initialUseDemoBackend: Boolean = true,
-    baseUrl: String = "http://localhost:8080",
+    initialUseDemoBackend: Boolean = false,
+    baseUrl: String = "http://localhost:8081",
     val platformHandler: ReportPlatformHandler = createPlatformHandler()
 ) {
     val demoBackend = DemoWasteManBackend()
     val ktorBackend = KtorWasteManBackend(createWasteManHttpClient(), baseUrl)
 
     var useDemoBackend by mutableStateOf(initialUseDemoBackend)
+    private var autoFallbackToDemo = false
     val backend: WasteManBackend get() = if (useDemoBackend) demoBackend else ktorBackend
 
     var activeTab by mutableStateOf(AppTab.HOME)
@@ -37,7 +38,7 @@ class AppState(
     var savedReporterName by mutableStateOf("")
     var isLoading by mutableStateOf(false)
 
-    var issueStats by mutableStateOf(IssueStats(total = 100, solved = 76))
+    var issueStats by mutableStateOf(IssueStats(total = 0, solved = 0))
     val reports = mutableStateListOf<WasteReportItem>()
     val myReports = mutableStateListOf<WasteReportItem>()
     val newsItems = mutableStateListOf<NewsAnnouncement>()
@@ -126,6 +127,7 @@ class AppState(
         val statsResult = backend.fetchDashboardStats()
 
         if (reportsResult.isFailure && !useDemoBackend && fallbackToDemoOnFailure) {
+            autoFallbackToDemo = true
             useDemoBackend = true
             loadInitialDemoSnapshot()
             isLoading = false
@@ -154,6 +156,7 @@ class AppState(
     }
 
     suspend fun setBackendMode(useDemo: Boolean) {
+        autoFallbackToDemo = false
         useDemoBackend = useDemo
         if (useDemo) {
             thumbnailCache.putAll(demoBackend.demoThumbnails)
@@ -161,8 +164,28 @@ class AppState(
         refreshFromBackend(fallbackToDemoOnFailure = false)
     }
 
+    suspend fun reconnectLiveBackend() {
+        autoFallbackToDemo = false
+        useDemoBackend = false
+        refreshFromBackend(fallbackToDemoOnFailure = true)
+    }
+
     suspend fun login(phoneNumber: String) {
         isLoading = true
+        if (autoFallbackToDemo) {
+            val liveResult = ktorBackend.sendOtpOrLogin(phoneNumber)
+            if (liveResult.isSuccess) {
+                autoFallbackToDemo = false
+                useDemoBackend = false
+                val session = liveResult.getOrThrow()
+                loginNum = session.phoneNumber
+                isAdmin = session.isAdmin
+                activeTab = AppTab.HOME
+                refreshFromBackend(fallbackToDemoOnFailure = false)
+                isLoading = false
+                return
+            }
+        }
         backend.sendOtpOrLogin(phoneNumber).onSuccess { session ->
             loginNum = session.phoneNumber
             isAdmin = session.isAdmin
@@ -258,12 +281,9 @@ class AppState(
     }
 
     fun recalculateLocalStats() {
-        val total = if (useDemoBackend) 95 + reports.size else reports.size
-        val solved = if (useDemoBackend) {
-            73 + reports.count { it.status == ReportStatus.SOLVED }
-        } else {
-            reports.count { it.status == ReportStatus.SOLVED }
-        }
-        issueStats = IssueStats(total = total, solved = solved)
+        issueStats = IssueStats(
+            total = reports.size,
+            solved = reports.count { it.status == ReportStatus.SOLVED }
+        )
     }
 }

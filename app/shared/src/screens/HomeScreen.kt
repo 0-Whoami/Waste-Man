@@ -1,11 +1,18 @@
 package com.example.wasteman.screens
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -39,6 +46,7 @@ import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.Recycling
 import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -52,6 +60,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -75,6 +84,7 @@ import com.example.wasteman.core.NewsAnnouncement
 import com.example.wasteman.core.NewsIconType
 import com.example.wasteman.core.WasteReportItem
 import com.example.wasteman.theme.Black
+import com.example.wasteman.theme.EcoDarkGreen
 import com.example.wasteman.theme.EcoGreen
 import com.example.wasteman.theme.EcoLightGreen
 import kotlinx.coroutines.launch
@@ -87,6 +97,7 @@ fun HomeScreen(
     recentReports: List<WasteReportItem>,
     resolveThumbnail: (WasteReportItem) -> ImageBitmap? = { null },
     isCompact: Boolean,
+    isLoading: Boolean = false,
     onReportClick: () -> Unit,
     onViewAllClick: () -> Unit
 ) {
@@ -94,78 +105,118 @@ fun HomeScreen(
     val topCardHeight = if (isCompact) 210.dp else 235.dp
     var selectedReportForDetail by remember { mutableStateOf<WasteReportItem?>(null) }
 
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(columns),
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(if (isCompact) 16.dp else 24.dp),
-        horizontalArrangement = Arrangement.spacedBy(20.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp)
-    ) {
-        item {
-            Surface(
-                shape = RoundedCornerShape(22.dp),
-                color = Color.White.copy(alpha = 0.88f),
-                border = BorderStroke(1.dp, Black.copy(alpha = 0.08f)),
-                modifier = Modifier.fillMaxWidth().height(topCardHeight)
+    AnimatedContent(
+        targetState = isLoading && recentReports.isEmpty(),
+        transitionSpec = { fadeIn(tween(240)) togetherWith fadeOut(tween(180)) },
+        label = "homeLoadingTransition"
+    ) { showInitialLoading ->
+        if (showInitialLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
-                IssueStatsGaugeCard(issueStats = issueStats, isCompact = isCompact)
-            }
-        }
-
-        item {
-            AutoAdvancingCarousel(
-                items = newsItems,
-                modifier = Modifier.fillMaxWidth().height(topCardHeight)
-            )
-        }
-
-        item(span = { GridItemSpan(maxLineSpan) }) {
-            if (isCompact) {
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text(
-                        text = "Recent Community Activity",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Black
+                    CircularProgressIndicator(
+                        color = EcoGreen,
+                        strokeWidth = 3.5.dp,
+                        modifier = Modifier.size(42.dp)
                     )
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilterPill(text = "+ New Report", selected = true, onClick = onReportClick)
-                        FilterPill(text = "View All", selected = false, onClick = onViewAllClick)
+                    Text(
+                        text = "Loading WasteMan...",
+                        color = EcoDarkGreen,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp
+                    )
+                }
+            }
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(columns),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(if (isCompact) 16.dp else 24.dp),
+                horizontalArrangement = Arrangement.spacedBy(20.dp),
+                verticalArrangement = Arrangement.spacedBy(18.dp)
+            ) {
+                item {
+                    Surface(
+                        shape = RoundedCornerShape(22.dp),
+                        color = Color.White.copy(alpha = 0.9f),
+                        border = BorderStroke(1.dp, Black.copy(alpha = 0.07f)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(topCardHeight)
+                            .shadow(
+                                elevation = 3.dp,
+                                shape = RoundedCornerShape(22.dp),
+                                ambientColor = Black.copy(alpha = 0.09f),
+                                spotColor = Black.copy(alpha = 0.13f)
+                            )
+                    ) {
+                        IssueStatsGaugeCard(issueStats = issueStats, isCompact = isCompact)
                     }
                 }
-            } else {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Recent Community Activity",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Black
+
+                item {
+                    AutoAdvancingCarousel(
+                        items = newsItems,
+                        modifier = Modifier.fillMaxWidth().height(topCardHeight)
                     )
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        FilterPill(text = "+ New Report", selected = true, onClick = onReportClick)
-                        FilterPill(text = "View All", selected = false, onClick = onViewAllClick)
+                }
+
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    if (isCompact) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Text(
+                                text = "Recent Community Activity",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Black
+                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                FilterPill(text = "+ New Report", selected = true, onClick = onReportClick)
+                                FilterPill(text = "View All", selected = false, onClick = onViewAllClick)
+                            }
+                        }
+                    } else {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Recent Community Activity",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Black
+                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                FilterPill(text = "+ New Report", selected = true, onClick = onReportClick)
+                                FilterPill(text = "View All", selected = false, onClick = onViewAllClick)
+                            }
+                        }
+                    }
+                }
+
+                // Public feed always renders with isAdmin = false so phone numbers stay hidden
+                items(recentReports.size, key = { recentReports[it].id }) { index ->
+                    val report = recentReports[index]
+                    Box(modifier = Modifier.animateItem()) {
+                        ReportCard(
+                            report = report,
+                            thumbnail = resolveThumbnail(report),
+                            isAdmin = false,
+                            onStatusChange = {},
+                            onClick = { selectedReportForDetail = report }
+                        )
                     }
                 }
             }
-        }
-
-        // Public feed always renders with isAdmin = false so phone numbers stay hidden
-        items(recentReports.size, key = { recentReports[it].id }) { index ->
-            val report = recentReports[index]
-            ReportCard(
-                report = report,
-                thumbnail = resolveThumbnail(report),
-                isAdmin = false,
-                onStatusChange = {},
-                onClick = { selectedReportForDetail = report }
-            )
         }
     }
 
@@ -182,7 +233,36 @@ fun HomeScreen(
 
 @Composable
 fun IssueStatsGaugeCard(issueStats: IssueStats, isCompact: Boolean) {
-    val percent = if (issueStats.total == 0) 0f else issueStats.solved.toFloat() / issueStats.total
+    var hasAppeared by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        hasAppeared = true
+    }
+
+    val targetPercent = if (hasAppeared && issueStats.total > 0) {
+        issueStats.solved.toFloat() / issueStats.total
+    } else {
+        0f
+    }
+    val animatedPercent by animateFloatAsState(
+        targetValue = targetPercent,
+        animationSpec = tween(durationMillis = 850, easing = FastOutSlowInEasing),
+        label = "statsPercent"
+    )
+    val animatedTotal by animateIntAsState(
+        targetValue = if (hasAppeared) issueStats.total else 0,
+        animationSpec = tween(durationMillis = 850, easing = FastOutSlowInEasing),
+        label = "statsTotal"
+    )
+    val animatedSolved by animateIntAsState(
+        targetValue = if (hasAppeared) issueStats.solved else 0,
+        animationSpec = tween(durationMillis = 850, easing = FastOutSlowInEasing),
+        label = "statsSolved"
+    )
+    val animatedPending by animateIntAsState(
+        targetValue = if (hasAppeared) issueStats.pending else 0,
+        animationSpec = tween(durationMillis = 850, easing = FastOutSlowInEasing),
+        label = "statsPending"
+    )
 
     Row(
         modifier = Modifier
@@ -228,7 +308,7 @@ fun IssueStatsGaugeCard(issueStats: IssueStats, isCompact: Boolean) {
                 drawArc(
                     color = EcoGreen,
                     startAngle = -180f,
-                    sweepAngle = 180f * percent,
+                    sweepAngle = 180f * animatedPercent,
                     useCenter = false,
                     style = Stroke(strokeWidthPx, cap = StrokeCap.Round),
                     topLeft = topLeft,
@@ -238,7 +318,7 @@ fun IssueStatsGaugeCard(issueStats: IssueStats, isCompact: Boolean) {
 
             val dynamicFont = (gaugeDiameter / 150.dp) * 28.sp
             Text(
-                text = "${round(percent * 100).toInt()}%",
+                text = "${round(animatedPercent * 100).toInt()}%",
                 color = Black,
                 fontWeight = FontWeight.Bold,
                 fontSize = dynamicFont,
@@ -254,9 +334,9 @@ fun IssueStatsGaugeCard(issueStats: IssueStats, isCompact: Boolean) {
                 .fillMaxHeight(),
             verticalArrangement = Arrangement.spacedBy(if (isCompact) 10.dp else 14.dp, Alignment.CenterVertically)
         ) {
-            StatLegendRow(color = Color.LightGray, text = "Submitted : ${issueStats.total}", isCompact = isCompact)
-            StatLegendRow(color = EcoGreen, text = "Solved : ${issueStats.solved}", isCompact = isCompact)
-            StatLegendRow(color = Color(0xFFFFA000), text = "Pending : ${issueStats.pending}", isCompact = isCompact)
+            StatLegendRow(color = Color.LightGray, text = "Submitted : $animatedTotal", isCompact = isCompact)
+            StatLegendRow(color = EcoGreen, text = "Solved : $animatedSolved", isCompact = isCompact)
+            StatLegendRow(color = Color(0xFFFFA000), text = "Pending : $animatedPending", isCompact = isCompact)
         }
     }
 }
@@ -322,6 +402,12 @@ fun AutoAdvancingCarousel(
 
     Column(
         modifier = modifier
+            .shadow(
+                elevation = 3.dp,
+                shape = RoundedCornerShape(22.dp),
+                ambientColor = Black.copy(alpha = 0.10f),
+                spotColor = Black.copy(alpha = 0.14f)
+            )
             .clip(RoundedCornerShape(22.dp))
             .background(EcoGreen)
             .pointerInput(Unit) {

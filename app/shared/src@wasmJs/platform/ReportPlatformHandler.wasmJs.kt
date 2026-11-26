@@ -58,7 +58,10 @@ class WasmJsReportPlatformHandler : ReportPlatformHandler {
         )
     }
 
-    override fun launchMapLocationPicker(onLocationPicked: (addressOrCoords: String) -> Unit) {
+    override fun launchMapLocationPicker(
+        onLocationPicked: (addressOrCoords: String) -> Unit,
+        onDismiss: () -> Unit
+    ) {
         val body = document.body ?: run {
             onLocationPicked("22.5726° N, 88.3639° E • Salt Lake Sector V")
             return
@@ -96,6 +99,17 @@ class WasmJsReportPlatformHandler : ReportPlatformHandler {
         }
 
         modal.innerHTML = """
+            <style>
+                @keyframes wm-spin { to { transform: rotate(360deg); } }
+                .wm-spinner {
+                    width: 28px;
+                    height: 28px;
+                    border: 3px solid rgba(79, 184, 40, 0.24);
+                    border-top-color: #4FB828;
+                    border-radius: 50%;
+                    animation: wm-spin 0.75s linear infinite;
+                }
+            </style>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                 <div>
                     <h3 style="margin:0; color:#191102; font-size:19px; font-weight:700;">Choose Location on Google Maps</h3>
@@ -118,9 +132,15 @@ class WasmJsReportPlatformHandler : ReportPlatformHandler {
                 <button id="wm-pin-park" type="button" style="padding:6px 11px; border-radius:999px; border:1px solid rgba(25,17,2,0.18); background:#fff; color:#191102; font-weight:600; font-size:12px; cursor:pointer;">Greenview Park</button>
             </div>
 
-            <iframe id="wm-gmap-iframe" width="100%" height="240" loading="lazy"
-                style="border:1px solid rgba(25,17,2,0.12); border-radius:16px; background:#fff; margin-bottom:12px;"
-                src="https://maps.google.com/maps?q=22.5726,88.3639&z=15&output=embed"></iframe>
+            <div style="position:relative; width:100%; height:240px; border:1px solid rgba(25,17,2,0.12); border-radius:16px; background:#fff; overflow:hidden; margin-bottom:12px;">
+                <div id="wm-gmap-loader" style="position:absolute; inset:0; display:flex; flex-direction:column; gap:8px; align-items:center; justify-content:center; background:rgba(255,255,255,0.9); z-index:2;">
+                    <div class="wm-spinner"></div>
+                    <span style="font-size:12px; font-weight:600; color:#386C0B;">Loading Google Maps...</span>
+                </div>
+                <iframe id="wm-gmap-iframe" width="100%" height="240" loading="lazy"
+                    style="border:none; display:block;"
+                    src="https://maps.google.com/maps?q=22.5726,88.3639&z=15&output=embed"></iframe>
+            </div>
 
             <div id="wm-gmap-selected" style="padding:10px 12px; border-radius:12px; background:rgba(255,255,255,0.85); border:1px solid rgba(56,108,11,0.2); font-size:12px; font-weight:600; color:#386C0B; margin-bottom:14px;">
                 Selected: Salt Lake Sector V, Kolkata
@@ -139,11 +159,20 @@ class WasmJsReportPlatformHandler : ReportPlatformHandler {
 
         val searchInput = document.getElementById("wm-gmap-search") as? HTMLInputElement
         val iframe = document.getElementById("wm-gmap-iframe") as? HTMLIFrameElement
+        val loader = document.getElementById("wm-gmap-loader") as? HTMLElement
+        val gpsButton = document.getElementById("wm-gmap-gps") as? HTMLButtonElement
         val selectedBanner = document.getElementById("wm-gmap-selected") as? HTMLElement
 
-        fun closeModal() {
+        iframe?.onload = {
+            loader?.style?.display = "none"
+        }
+
+        fun closeModal(cancelled: Boolean) {
             if (overlay.parentNode == body) {
                 body.removeChild(overlay)
+            }
+            if (cancelled) {
+                onDismiss()
             }
         }
 
@@ -152,17 +181,18 @@ class WasmJsReportPlatformHandler : ReportPlatformHandler {
             currentMapQuery = mapQuery
             searchInput?.value = label
             selectedBanner?.textContent = "Selected: $label"
+            loader?.style?.display = "flex"
             iframe?.src = "https://maps.google.com/maps?q=${encodeUrlComponent(mapQuery)}&z=15&output=embed"
         }
 
         overlay.onclick = { event ->
             if (event.target == overlay) {
-                closeModal()
+                closeModal(cancelled = true)
             }
         }
 
         (document.getElementById("wm-gmap-close") as? HTMLButtonElement)?.onclick = {
-            closeModal()
+            closeModal(cancelled = true)
         }
 
         (document.getElementById("wm-gmap-preview") as? HTMLButtonElement)?.onclick = {
@@ -181,13 +211,19 @@ class WasmJsReportPlatformHandler : ReportPlatformHandler {
             }
         }
 
-        (document.getElementById("wm-gmap-gps") as? HTMLButtonElement)?.onclick = {
+        gpsButton?.onclick = {
+            gpsButton.textContent = "Locating..."
+            gpsButton.disabled = true
             requestBrowserGeolocation(
                 onSuccess = { lat, lng ->
+                    gpsButton.textContent = "Use My GPS"
+                    gpsButton.disabled = false
                     val coordsLabel = formatCoordinates(lat, lng)
                     updatePreview(coordsLabel, "$lat,$lng")
                 },
                 onError = {
+                    gpsButton.textContent = "Use My GPS"
+                    gpsButton.disabled = false
                     updatePreview("Salt Lake Sector V, Kolkata (22.5726, 88.3639)", "22.5726,88.3639")
                 }
             )
@@ -212,7 +248,7 @@ class WasmJsReportPlatformHandler : ReportPlatformHandler {
 
         (document.getElementById("wm-gmap-confirm") as? HTMLButtonElement)?.onclick = {
             val finalValue = searchInput?.value?.trim().orEmpty().ifEmpty { selectedLocation }
-            closeModal()
+            closeModal(cancelled = false)
             onLocationPicked(finalValue)
         }
     }

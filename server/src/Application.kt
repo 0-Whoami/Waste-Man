@@ -36,8 +36,9 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
 fun main() {
-    embeddedServer(Netty, port = 8080, host = "0.0.0.0", module = Application::module)
-        .start(wait = true)
+    embeddedServer(Netty, port = 8081, host = "0.0.0.0") {
+        module(persistToDisk = true)
+    }.start(wait = true)
 }
 
 private val configuredAdminPhoneDigits = setOf(
@@ -51,6 +52,7 @@ private val sessionStore = ConcurrentHashMap<String, UserSession>()
 private val reportLock = Any()
 private val reportSequence = AtomicInteger(105)
 private val uploadsDir = File("uploads").apply { mkdirs() }
+private val reportsStorageFile = File("data/reports.json")
 
 private val storedReports = mutableListOf(
     WasteReportItem(
@@ -110,7 +112,11 @@ private val storedReports = mutableListOf(
     )
 )
 
-fun Application.module() {
+fun Application.module(persistToDisk: Boolean = false) {
+    if (persistToDisk) {
+        loadPersistedReports()
+    }
+
     install(ContentNegotiation) {
         json(WasteManJson)
     }
@@ -214,6 +220,7 @@ fun Application.module() {
 
             synchronized(reportLock) {
                 storedReports.add(0, createdItem)
+                if (persistToDisk) savePersistedReportsLocked()
             }
 
             val responseItem = if (session?.isAdmin == true) createdItem else createdItem.sanitizedForPublic()
@@ -241,6 +248,7 @@ fun Application.module() {
                 } else {
                     val next = storedReports[index].copy(status = request.status)
                     storedReports[index] = next
+                    if (persistToDisk) savePersistedReportsLocked()
                     next
                 }
             }
@@ -287,4 +295,26 @@ private fun saveUploadedImage(reportId: String, bytes: ByteArray): String? {
     val fileName = "$reportId.$ext"
     File(uploadsDir, fileName).writeBytes(bytes)
     return "/uploads/$fileName"
+}
+
+private fun loadPersistedReports() {
+    if (!reportsStorageFile.exists()) return
+    runCatching {
+        val loaded = WasteManJson.decodeFromString<List<WasteReportItem>>(reportsStorageFile.readText())
+        if (loaded.isNotEmpty()) {
+            synchronized(reportLock) {
+                storedReports.clear()
+                storedReports.addAll(loaded)
+                val maxSeq = loaded.mapNotNull { it.id.removePrefix("REP-").toIntOrNull() }.maxOrNull() ?: 105
+                reportSequence.set(maxOf(reportSequence.get(), maxSeq))
+            }
+        }
+    }
+}
+
+private fun savePersistedReportsLocked() {
+    runCatching {
+        reportsStorageFile.parentFile?.mkdirs()
+        reportsStorageFile.writeText(WasteManJson.encodeToString(storedReports.toList()))
+    }
 }

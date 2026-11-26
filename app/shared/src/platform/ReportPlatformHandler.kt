@@ -9,7 +9,10 @@ import com.example.wasteman.theme.EcoDarkGreen
 interface ReportPlatformHandler {
     fun launchImagePicker(onImagePicked: (bytes: ByteArray, bitmap: ImageBitmap) -> Unit)
     fun fetchCurrentLocation(onLocationFetched: (addressOrCoords: String) -> Unit)
-    fun launchMapLocationPicker(onLocationPicked: (addressOrCoords: String) -> Unit)
+    fun launchMapLocationPicker(
+        onLocationPicked: (addressOrCoords: String) -> Unit,
+        onDismiss: () -> Unit = {}
+    )
     fun decodeBitmap(bytes: ByteArray): ImageBitmap? = null
 }
 
@@ -25,7 +28,10 @@ class DemoPlatformHandler : ReportPlatformHandler {
         onLocationFetched("22.5726° N, 88.3639° E • Salt Lake Sector V")
     }
 
-    override fun launchMapLocationPicker(onLocationPicked: (addressOrCoords: String) -> Unit) {
+    override fun launchMapLocationPicker(
+        onLocationPicked: (addressOrCoords: String) -> Unit,
+        onDismiss: () -> Unit
+    ) {
         onLocationPicked("Salt Lake Sector V, Kolkata (22.5726, 88.3639)")
     }
 }

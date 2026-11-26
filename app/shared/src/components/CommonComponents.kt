@@ -1,9 +1,14 @@
 package com.example.wasteman.components
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -70,7 +75,7 @@ fun NavPill(
         label = "pressScale"
     )
     val elevation by animateDpAsState(
-        targetValue = if (hovered) 8.dp else 3.dp,
+        targetValue = if (hovered) 5.dp else 2.dp,
         label = "hoverElevation"
     )
 
@@ -81,7 +86,12 @@ fun NavPill(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .scale(scale)
-            .shadow(elevation, RoundedCornerShape(50))
+            .shadow(
+                elevation = elevation,
+                shape = RoundedCornerShape(50),
+                ambientColor = Black.copy(alpha = 0.12f),
+                spotColor = Black.copy(alpha = 0.16f)
+            )
             .clip(RoundedCornerShape(50))
             .background(EcoLightGreen)
             .height(40.dp)
@@ -115,9 +125,17 @@ fun FilterPill(
 ) {
     Surface(
         shape = RoundedCornerShape(50),
-        color = if (selected) EcoGreen else Color.White.copy(alpha = 0.8f),
-        border = if (selected) null else BorderStroke(1.dp, Black.copy(alpha = 0.15f)),
-        modifier = Modifier.clip(RoundedCornerShape(50)).clickable(onClick = onClick)
+        color = if (selected) EcoGreen else Color.White.copy(alpha = 0.85f),
+        border = if (selected) null else BorderStroke(1.dp, Black.copy(alpha = 0.12f)),
+        modifier = Modifier
+            .shadow(
+                elevation = if (selected) 2.dp else 1.dp,
+                shape = RoundedCornerShape(50),
+                ambientColor = Black.copy(alpha = 0.08f),
+                spotColor = Black.copy(alpha = 0.12f)
+            )
+            .clip(RoundedCornerShape(50))
+            .clickable(onClick = onClick)
     ) {
         Text(
             text = text,
@@ -201,20 +219,26 @@ fun WasteManDropdownItem(
 
 @Composable
 fun StatusBadge(status: ReportStatus) {
-    val (bgColor, textColor, icon) = when (status) {
-        ReportStatus.SOLVED -> Triple(EcoGreen.copy(alpha = 0.18f), EcoDarkGreen, Icons.Default.CheckCircle)
-        ReportStatus.IN_PROGRESS -> Triple(Color(0xFFFFA000).copy(alpha = 0.18f), Color(0xFF8D5400), Icons.Default.Schedule)
-        ReportStatus.PENDING -> Triple(Black.copy(alpha = 0.1f), Black.copy(alpha = 0.7f), Icons.Default.Schedule)
-    }
+    AnimatedContent(
+        targetState = status,
+        transitionSpec = { fadeIn(tween(180)) togetherWith fadeOut(tween(150)) },
+        label = "statusBadge"
+    ) { current ->
+        val (bgColor, textColor, icon) = when (current) {
+            ReportStatus.SOLVED -> Triple(EcoGreen.copy(alpha = 0.18f), EcoDarkGreen, Icons.Default.CheckCircle)
+            ReportStatus.IN_PROGRESS -> Triple(Color(0xFFFFA000).copy(alpha = 0.18f), Color(0xFF8D5400), Icons.Default.Schedule)
+            ReportStatus.PENDING -> Triple(Black.copy(alpha = 0.1f), Black.copy(alpha = 0.7f), Icons.Default.Schedule)
+        }
 
-    Surface(shape = RoundedCornerShape(50), color = bgColor) {
-        Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Icon(icon, contentDescription = null, tint = textColor, modifier = Modifier.size(12.dp))
-            Text(status.label, color = textColor, fontWeight = FontWeight.SemiBold, fontSize = 11.sp)
+        Surface(shape = RoundedCornerShape(50), color = bgColor) {
+            Row(
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Icon(icon, contentDescription = null, tint = textColor, modifier = Modifier.size(12.dp))
+                Text(current.label, color = textColor, fontWeight = FontWeight.SemiBold, fontSize = 11.sp)
+            }
         }
     }
 }

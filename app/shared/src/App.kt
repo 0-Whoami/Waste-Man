@@ -1,5 +1,11 @@
 package com.example.wasteman
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -43,6 +49,7 @@ import com.example.wasteman.screens.LoginScreen
 import com.example.wasteman.screens.MyReportsContent
 import com.example.wasteman.state.AppState
 import com.example.wasteman.state.AppTab
+import com.example.wasteman.theme.Black
 import com.example.wasteman.theme.EcoGreen
 import com.example.wasteman.theme.EcoLightGreen
 import com.example.wasteman.theme.WasteManTheme
@@ -64,7 +71,7 @@ fun App() {
 fun WasteManAppScreen(state: AppState = remember { AppState() }) {
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(state.useDemoBackend) {
+    LaunchedEffect(Unit) {
         if (!state.useDemoBackend) {
             state.refreshFromBackend(fallbackToDemoOnFailure = true)
         }
@@ -73,94 +80,111 @@ fun WasteManAppScreen(state: AppState = remember { AppState() }) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val isCompact = maxWidth < 680.dp
 
-        if (state.activeTab == AppTab.LOGIN) {
-            LoginScreen(
-                isLoading = state.isLoading,
-                onContinueWithPhone = { fullPhone ->
-                    scope.launch { state.login(fullPhone) }
-                },
-                onBackToHome = { state.activeTab = AppTab.HOME }
-            )
-        } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(EcoGreen)
-                    .safeContentPadding()
-                    .padding(horizontal = if (isCompact) 10.dp else 20.dp, vertical = 10.dp)
-            ) {
-                HeaderBar(
-                    isCompact = isCompact,
-                    state = state,
-                    onAuthClick = {
-                        if (state.loginNum.isBlank()) {
-                            state.activeTab = AppTab.LOGIN
-                        } else {
-                            state.logout()
-                        }
-                    }
+        AnimatedContent(
+            targetState = state.activeTab == AppTab.LOGIN,
+            transitionSpec = {
+                (fadeIn(tween(240)) + slideInVertically { it / 28 }) togetherWith fadeOut(tween(160))
+            },
+            label = "rootAuthTransition"
+        ) { isLogin ->
+            if (isLogin) {
+                LoginScreen(
+                    isLoading = state.isLoading,
+                    onContinueWithPhone = { fullPhone ->
+                        scope.launch { state.login(fullPhone) }
+                    },
+                    onBackToHome = { state.activeTab = AppTab.HOME }
                 )
-
-                NavBar(state = state)
-
-                Surface(
+            } else {
+                Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .shadow(
-                            elevation = 6.dp,
-                            shape = RoundedCornerShape(24.dp),
-                            spotColor = EcoLightGreen,
-                            ambientColor = EcoLightGreen
-                        ),
-                    shape = RoundedCornerShape(24.dp),
-                    color = EcoLightGreen
+                        .background(EcoGreen)
+                        .safeContentPadding()
+                        .padding(horizontal = if (isCompact) 10.dp else 20.dp, vertical = 10.dp)
                 ) {
-                    when (state.activeTab) {
-                        AppTab.HOME -> HomeScreen(
-                            issueStats = state.issueStats,
-                            newsItems = state.newsItems,
-                            recentReports = state.reports.take(4),
-                            resolveThumbnail = state::resolveThumbnail,
-                            isCompact = isCompact,
-                            onReportClick = { state.activeTab = AppTab.REPORT },
-                            onViewAllClick = { state.activeTab = AppTab.ISSUES }
-                        )
-
-                        AppTab.REPORT -> AddReportContent(
-                            platformHandler = state.platformHandler,
-                            defaultReporterName = state.savedReporterName,
-                            reporterPhone = state.loginNum,
-                            isSubmitting = state.isLoading,
-                            onSubmitReport = { draft, localPreview ->
-                                scope.launch { state.submitReport(draft, localPreview) }
-                            }
-                        )
-
-                        AppTab.ISSUES -> MyReportsContent(
-                            reports = if (state.useDemoBackend) {
-                                state.reports.filter {
-                                    state.loginNum.isBlank() || it.reporterPhone == state.loginNum
-                                }
+                    HeaderBar(
+                        isCompact = isCompact,
+                        state = state,
+                        onAuthClick = {
+                            if (state.loginNum.isBlank()) {
+                                state.activeTab = AppTab.LOGIN
                             } else {
-                                state.myReports
-                            },
-                            resolveThumbnail = state::resolveThumbnail,
-                            isAdmin = false,
-                            isLoading = state.isLoading,
-                            onStatusUpdate = { _, _ -> }
-                        )
-
-                        AppTab.ADMIN -> MyReportsContent(
-                            reports = state.reports,
-                            resolveThumbnail = state::resolveThumbnail,
-                            isAdmin = state.isAdmin,
-                            isLoading = state.isLoading,
-                            onStatusUpdate = { reportId, newStatus ->
-                                scope.launch { state.updateReportStatus(reportId, newStatus) }
+                                state.logout()
                             }
-                        )
+                        }
+                    )
 
-                        AppTab.LOGIN -> Unit
+                    NavBar(state = state)
+
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .shadow(
+                                elevation = 4.dp,
+                                shape = RoundedCornerShape(24.dp),
+                                ambientColor = Black.copy(alpha = 0.12f),
+                                spotColor = Black.copy(alpha = 0.16f)
+                            ),
+                        shape = RoundedCornerShape(24.dp),
+                        color = EcoLightGreen
+                    ) {
+                        AnimatedContent(
+                            targetState = state.activeTab,
+                            transitionSpec = {
+                                (fadeIn(tween(220)) + slideInVertically { it / 28 }) togetherWith fadeOut(tween(150))
+                            },
+                            label = "tabContentTransition"
+                        ) { tab ->
+                            when (tab) {
+                                AppTab.HOME -> HomeScreen(
+                                    issueStats = state.issueStats,
+                                    newsItems = state.newsItems,
+                                    recentReports = state.reports.take(4),
+                                    resolveThumbnail = state::resolveThumbnail,
+                                    isCompact = isCompact,
+                                    isLoading = state.isLoading,
+                                    onReportClick = { state.activeTab = AppTab.REPORT },
+                                    onViewAllClick = { state.activeTab = AppTab.ISSUES }
+                                )
+
+                                AppTab.REPORT -> AddReportContent(
+                                    platformHandler = state.platformHandler,
+                                    defaultReporterName = state.savedReporterName,
+                                    reporterPhone = state.loginNum,
+                                    isSubmitting = state.isLoading,
+                                    onSubmitReport = { draft, localPreview ->
+                                        scope.launch { state.submitReport(draft, localPreview) }
+                                    }
+                                )
+
+                                AppTab.ISSUES -> MyReportsContent(
+                                    reports = if (state.useDemoBackend) {
+                                        state.reports.filter {
+                                            state.loginNum.isBlank() || it.reporterPhone == state.loginNum
+                                        }
+                                    } else {
+                                        state.myReports
+                                    },
+                                    resolveThumbnail = state::resolveThumbnail,
+                                    isAdmin = false,
+                                    isLoading = state.isLoading,
+                                    onStatusUpdate = { _, _ -> }
+                                )
+
+                                AppTab.ADMIN -> MyReportsContent(
+                                    reports = state.reports,
+                                    resolveThumbnail = state::resolveThumbnail,
+                                    isAdmin = state.isAdmin,
+                                    isLoading = state.isLoading,
+                                    onStatusUpdate = { reportId, newStatus ->
+                                        scope.launch { state.updateReportStatus(reportId, newStatus) }
+                                    }
+                                )
+
+                                AppTab.LOGIN -> Unit
+                            }
+                        }
                     }
                 }
             }
@@ -214,8 +238,8 @@ fun NavBar(state: AppState) {
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 6.dp, vertical = 8.dp)
             .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 6.dp, vertical = 8.dp)
     ) {
         NavPill(
             active = state.activeTab == AppTab.HOME,

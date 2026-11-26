@@ -11,6 +11,7 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
+import io.ktor.client.statement.readRawBytes
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
@@ -32,7 +33,7 @@ fun createWasteManHttpClient(): HttpClient = HttpClient {
 
 class KtorWasteManBackend(
     private val client: HttpClient,
-    baseUrl: String = "http://localhost:8080"
+    baseUrl: String = "http://localhost:8081"
 ) : WasteManBackend {
 
     private val normalizedBaseUrl: String = baseUrl.trimEnd('/')
@@ -115,10 +116,8 @@ class KtorWasteManBackend(
     }
 
     suspend fun fetchImageBytes(imageUrl: String): ByteArray? = runCatching {
-        val response = client.get(resolveUrl(imageUrl)) {
-            applyAuthHeader()
-        }
-        if (response.status.isSuccess()) response.body<ByteArray>() else null
+        val response = client.get(resolveUrl(imageUrl))
+        if (response.status.isSuccess()) response.readRawBytes() else null
     }.getOrNull()
 
     private fun HttpRequestBuilder.applyAuthHeader() {
