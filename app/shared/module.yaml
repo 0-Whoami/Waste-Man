@@ -14,8 +14,10 @@ dependencies:
   - $libs.androidx.lifecycle.viewmodel.compose
   - $libs.androidx.lifecycle.runtime.compose
   - $libs.material.icons.extended
+  - $ktor.client.core
 
 settings:
+  ktor: enabled
   compose:
     enabled: true
     resources:

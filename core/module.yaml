@@ -1,3 +1,17 @@
 product:
   type: kmp/lib
   platforms: [ jvm, wasmJs ]
+
+dependencies:
+  - $kotlin.serialization.json
+  - $ktor.client.core
+  - $ktor.client.contentNegotiation
+  - $ktor.serialization.kotlinx.json
+
+dependencies@jvm:
+  - $ktor.client.cio
+
+settings:
+  kotlin:
+    serialization: enabled
+  ktor: enabled
